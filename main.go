@@ -3,43 +3,49 @@ package main
 
 import (
 	"log"
-    "flag"
+	"flag"
 	"github.com/fsnotify/fsnotify"
+//    "os"
 )
 
 func main() {
-    log.Fatal("Arguments: %v", flag.Args())
+    flag.Parse()
+    if len(flag.Args()) == 0 {
+	    log.Fatalf("Usage: onfse <path>")
+    }
+    dir := flag.Arg(0)
+    log.Printf("Dir %v", dir)
 
-	// watcher, err := fsnotify.NewWatcher()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer watcher.Close()
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+	 	log.Fatal(err)
+	}
+	defer watcher.Close()
 
-	// done := make(chan bool)
-	// go func() {
-	// 	for {
-	// 		select {
-	// 		case event, ok := <-watcher.Events:
-	// 			if !ok {
-	// 				return
-	// 			}
-	// 			log.Println("event:", event)
-	// 			if event.Has(fsnotify.Write) {
-	// 				log.Println("modified file:", event.Name)
-	// 			}
-	// 		case err, ok := <-watcher.Errors:
-	// 			if !ok {
-	// 				return
-	// 			}
-	// 			log.Println("error:", err)
-	// 		}
-	// 	}
-	// }()
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				log.Println("event:", event)
+				if event.Has(fsnotify.Write) {
+					log.Println("modified file:", event.Name)
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
+			}
+		}
+	}()
 
-	// err = watcher.Add("/tmp")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// <-done
+	err = watcher.Add(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	<-done
 }
