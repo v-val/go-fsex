@@ -31,7 +31,7 @@ func main() {
 					return
 				}
 				log.Println("event:", event)
-				if event.Has(fsnotify.Write) {
+				if event.Op & (fsnotify.Write | fsnotify.Create | fsnotify.Remove | fsnotify.Rename ) != 0 {
 					log.Println("modified file:", event.Name)
 				}
 			case err, ok := <-watcher.Errors:
