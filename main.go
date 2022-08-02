@@ -8,6 +8,7 @@ import (
 	"time"
 	"strings"
 	"os/exec"
+	"os"
 )
 
 func main() {
@@ -89,6 +90,8 @@ func main() {
 					} else {
 						cmd_ = exec.Command(cmd[0], cmd[1:]...)
 					}
+					cmd_.Stdout = os.Stdout
+					cmd_.Stderr = os.Stderr
 					err := cmd_.Run()
 					if err != nil {
 						println(strings.Repeat("+", 48))
