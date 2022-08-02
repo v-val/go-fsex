@@ -6,15 +6,19 @@ import (
 	"flag"
 	"github.com/fsnotify/fsnotify"
 	"time"
+	"strings"
 )
 
 func main() {
     flag.Parse()
-    if len(flag.Args()) == 0 {
-	    log.Fatalf("Usage: onfse <path>")
+    if len(flag.Args()) < 2 {
+	    log.Fatalf("Usage: onfse <path> <command>")
     }
     dir := flag.Arg(0)
     log.Printf("Dir %v", dir)
+
+    cmd := flag.Args()[1:]
+	log.Printf("Cmd %v", cmd)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -56,7 +60,7 @@ func main() {
 	waitDuration := 100*time.Millisecond
 	actionAfter  := time.Second / 2
 	idleLoopsMax := int(actionAfter / waitDuration)
-	log.Printf("Idle Loops Max %v", idleLoopsMax)
+	//log.Printf("Idle Loops Max %v", idleLoopsMax)
 
 	nevents := 0
 	nidle := 0
@@ -75,7 +79,10 @@ func main() {
 				}
 			} else {
 				if nevents > 0 && nidle >= idleLoopsMax {
-					log.Println("Action triggered")
+					println(strings.Repeat("=", 48))
+					log.Printf("RUN %v", cmd)
+					println(strings.Repeat("-", 48))
+					//cmd_ := exec.Command("shell", cmd)
 					nevents = 0
 					nidle = 0
 				}
