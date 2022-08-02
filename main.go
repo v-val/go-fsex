@@ -7,6 +7,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"time"
 	"strings"
+	"os/exec"
 )
 
 func main() {
@@ -82,7 +83,17 @@ func main() {
 					println(strings.Repeat("=", 48))
 					log.Printf("RUN %v", cmd)
 					println(strings.Repeat("-", 48))
-					//cmd_ := exec.Command("shell", cmd)
+					var cmd_ *exec.Cmd
+					if len(cmd) == 1 {
+						cmd_ = exec.Command(cmd[0])
+					} else {
+						cmd_ = exec.Command(cmd[0], cmd[1:]...)
+					}
+					err := cmd_.Run()
+					if err != nil {
+						println(strings.Repeat("+", 48))
+						log.Printf("Command failed: %s", err)
+					}
 					nevents = 0
 					nidle = 0
 				}
