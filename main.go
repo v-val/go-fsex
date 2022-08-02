@@ -5,7 +5,7 @@ import (
 	"log"
 	"flag"
 	"github.com/fsnotify/fsnotify"
-//    "os"
+	"time"
 )
 
 func main() {
@@ -22,8 +22,10 @@ func main() {
 	}
 	defer watcher.Close()
 
+	notifications := make(chan bool)
 	done := make(chan bool)
 	go func() {
+		//lastEventTime := time.Now()
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -32,7 +34,10 @@ func main() {
 				}
 				log.Println("event:", event)
 				if event.Op & (fsnotify.Write | fsnotify.Create | fsnotify.Remove | fsnotify.Rename ) != 0 {
-					log.Println("modified file:", event.Name)
+					//t := time.Now()
+					//if t.Sub(lastEventTime) < 100 * time.Millisecond {}
+					//log.Println("modified file:", event.Name, event.Op)
+					notifications <- true
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
@@ -47,5 +52,34 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	<-done
+
+	waitDuration := 100*time.Millisecond
+	actionAfter  := time.Second
+	idleLoopsMax := int(actionAfter / waitDuration)
+	log.Printf("Idle Loops Max %v", idleLoopsMax)
+
+	nevents := 0
+	nidle := 0
+	for {
+		select {
+		case _ = <-done:
+			return
+		case _ = <-notifications:
+			nevents += 1
+			nidle = 0
+		default:
+			if nevents == 0 || nidle < idleLoopsMax {
+				time.Sleep(waitDuration)
+				if nevents > 0 {
+					nidle += 1
+				}
+			} else {
+				if nevents > 0 && nidle >= idleLoopsMax {
+					log.Println("Action triggered")
+					nevents = 0
+					nidle = 0
+				}
+			}
+		}
+	}
 }
