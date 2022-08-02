@@ -32,7 +32,7 @@ func main() {
 				if !ok {
 					return
 				}
-				log.Println("event:", event)
+				//log.Println("event:", event)
 				if event.Op & (fsnotify.Write | fsnotify.Create | fsnotify.Remove | fsnotify.Rename ) != 0 {
 					//t := time.Now()
 					//if t.Sub(lastEventTime) < 100 * time.Millisecond {}
@@ -54,7 +54,7 @@ func main() {
 	}
 
 	waitDuration := 100*time.Millisecond
-	actionAfter  := time.Second
+	actionAfter  := time.Second / 2
 	idleLoopsMax := int(actionAfter / waitDuration)
 	log.Printf("Idle Loops Max %v", idleLoopsMax)
 
