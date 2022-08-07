@@ -102,7 +102,7 @@ func main() {
 						println(bodyEndError)
 						log.Printf("Command failed: %s", err)
 					} else {
-						var ee *exec.ExitError
+						var ee exec.ExitError
 						errors.As(err, &ee)
 						log.Printf("Command returned %d", ee.ExitCode())
 						println(bodyEndOk)
