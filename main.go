@@ -102,9 +102,12 @@ func main() {
 						println(bodyEndError)
 						log.Printf("Command failed: %s", err)
 					} else {
-						var ee exec.ExitError
-						errors.As(err, &ee)
-						log.Printf("Command returned %d", ee.ExitCode())
+						var ee *exec.ExitError
+						if errors.As(err, &ee) {
+							log.Printf("Command returned %d", ee.ExitCode())
+						} else {
+							log.Printf("Command completed successfully")
+						}
 						println(bodyEndOk)
 					}
 					nevents = 0
