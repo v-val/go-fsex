@@ -103,12 +103,12 @@ func main() {
 						log.Printf("Command failed: %s", err)
 					} else {
 						var ee *exec.ExitError
+						println(bodyEndOk)
 						if errors.As(err, &ee) {
 							log.Printf("Command returned %d", ee.ExitCode())
 						} else {
 							log.Printf("Command completed successfully")
 						}
-						println(bodyEndOk)
 					}
 					nevents = 0
 					nidle = 0
