@@ -12,15 +12,33 @@ import (
 	"time"
 )
 
-func main() {
-	flag.Parse()
-	if len(flag.Args()) < 2 {
-		log.Fatalf("Usage: onfse <path> <command>")
-	}
-	dir := flag.Arg(0)
-	log.Printf("Dir %v", dir)
+type stringListFlag []string
 
-	cmd := flag.Args()[1:]
+func (s *stringListFlag) String() string {
+	r := ""
+	for _, v := range *s {
+		if len(r) > 0 {
+			r += ", "
+		}
+		r += v
+	}
+	return r
+}
+func (d *stringListFlag) Set(value string) error {
+	*d = append(*d, value)
+	return nil
+}
+
+func main() {
+	var dirs stringListFlag
+	flag.Var(&dirs, "f", "File or dir to watch after")
+	flag.Parse()
+	if len(dirs) < 1 || len(flag.Args()) < 1 {
+		log.Fatalf("Usage: onfse -f<path> [-f<path2> ...] <command>")
+	}
+	log.Printf("Dir %v", dirs)
+
+	cmd := flag.Args()
 	log.Printf("Cmd %v", cmd)
 
 	watcher, err := fsnotify.NewWatcher()
@@ -55,9 +73,11 @@ func main() {
 		}
 	}()
 
-	err = watcher.Add(dir)
-	if err != nil {
-		log.Fatal(err)
+	for _, f := range dirs {
+		err = watcher.Add(f)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	waitDuration := 100 * time.Millisecond
