@@ -30,4 +30,7 @@ jobs:
       - name: Publish builds
         uses: actions/upload-artifact@v3.1.0
         with:
-          path: fsex-*
+          path: |
+            fsex-darwin-amd64.tar.gz
+            fsex-linux-amd64.tar.gz
+            fsex-windows-amd64.tar.gz
