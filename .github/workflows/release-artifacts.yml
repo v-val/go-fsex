@@ -27,6 +27,8 @@ jobs:
             name: 'fsex'
             compress: 'true'
             dest: 'dist'
+      - name: Check PWD
+        run: pwd
       - name: Publish builds
         uses: actions/upload-artifact@v3.1.0
         with:
@@ -34,3 +36,4 @@ jobs:
             fsex-darwin-amd64.tar.gz
             fsex-linux-amd64.tar.gz
             fsex-windows-amd64.tar.gz
+          if-no-files-found: error
