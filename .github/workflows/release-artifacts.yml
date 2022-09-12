@@ -28,7 +28,7 @@ jobs:
             compress: 'true'
             dest: 'dist'
       - name: Check built files
-        run: ls -lA /github/workspace/dist/*
+        run: ls -lA . /github/workspace/
       - name: Publish builds
         uses: actions/upload-artifact@v3.1.0
         with:
