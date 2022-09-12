@@ -28,12 +28,12 @@ jobs:
             compress: 'true'
             dest: 'dist'
       - name: Check built files
-        run: ls -lA . /github/workspace/
+        run: pwd ; ls -lA dist/*
       - name: Publish builds
         uses: actions/upload-artifact@v3.1.0
         with:
           path: |
-            fsex-darwin-amd64.tar.gz
-            fsex-linux-amd64.tar.gz
-            fsex-windows-amd64.tar.gz
+            dist/fsex-darwin-amd64.tar.gz
+            dist/fsex-linux-amd64.tar.gz
+            dist/fsex-windows-amd64.tar.gz
           if-no-files-found: error
