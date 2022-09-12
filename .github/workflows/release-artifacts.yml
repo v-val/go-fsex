@@ -27,8 +27,8 @@ jobs:
             name: 'fsex'
             compress: 'true'
             dest: 'dist'
-      - name: Check PWD
-        run: pwd
+      - name: Check built files
+        run: ls -lA /github/workspace/dist/*
       - name: Publish builds
         uses: actions/upload-artifact@v3.1.0
         with:
