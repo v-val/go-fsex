@@ -30,4 +30,4 @@ jobs:
       - name: Publish builds
         uses: actions/upload-artifact@v3.1.0
         with:
-          path: /github/workspace/fsex-*
+          path: /github/workspace/dist/fsex-*
