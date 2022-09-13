@@ -41,7 +41,7 @@ func main() {
 	flag.Parse()
 	// Check that at least one FS entity and at least one word command are passed
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
-		log.Fatalf("Usage: onfse -f<path> [-f<path2> ...] <command>")
+		log.Fatalf("Usage: fsex -f<path> [-f<path2> ...] <command>")
 	}
 	log.Printf("Dir %v", fsEntities)
 
