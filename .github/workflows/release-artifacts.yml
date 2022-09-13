@@ -1,0 +1,90 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Generate release-artifacts
+
+# Controls when the workflow will run
+on:
+  release:
+    types:
+      - created
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  generate:
+    name: Generate cross-platform builds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Generate build files
+        uses: thatisuday/go-cross-build@v1
+        with:
+            platforms: 'linux/amd64, darwin/amd64, windows/amd64'
+            package: 'main.go'
+            name: 'fsex'
+            compress: 'true'
+            dest: 'dist'
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload Darwin build
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: dist/fsex-darwin-amd64.tar.gz
+          asset_name: fsex-darwin-amd64.tar.gz
+          asset_content_type: application/octet-stream
+      - name: Upload Linux build
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: dist/fsex-linux-amd64.tar.gz
+          asset_name: fsex-linux-amd64.tar.gz
+          asset_content_type: application/octet-stream
+      - name: Upload Windows build
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: dist/fsex-windows-amd64.tar.gz
+          asset_name: fsex-windows-amd64.tar.gz
+          asset_content_type: application/octet-stream
+
+#       - name: Release
+#         uses: softprops/action-gh-release@v1
+#         if: startsWith(github.ref, 'refs/tags/')
+#         with:
+#           files: |
+#             Release.txt
+#             LICENSE
+
+#       - name: Check built files
+#         run: pwd ; ls -lA dist/*
+#       - name: Publish Darwin build
+#         uses: actions/upload-artifact@v3.1.0
+#         with:
+#           path: dist/fsex-darwin-amd64.tar.gz
+#           name: fsex-darwin-amd64.tar.gz
+#           if-no-files-found: error
+#       - name: Publish Linux build
+#         uses: actions/upload-artifact@v3.1.0
+#         with:
+#           path: dist/fsex-linux-amd64.tar.gz
+#           name: fsex-linux-amd64.tar.gz
+#           if-no-files-found: error
+#       - name: Publish Windows build
+#         uses: actions/upload-artifact@v3.1.0
+#         with:
+#           path: dist/fsex-windows-amd64.tar.gz
+#           name: fsex-windows-amd64.tar.gz
+#           if-no-files-found: error
