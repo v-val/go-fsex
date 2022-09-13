@@ -27,23 +27,37 @@ jobs:
             name: 'fsex'
             compress: 'true'
             dest: 'dist'
-      - name: Check built files
-        run: pwd ; ls -lA dist/*
-      - name: Publish Darwin build
-        uses: actions/upload-artifact@v3.1.0
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload release binary
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
-          path: dist/fsex-darwin-amd64.tar.gz
-          name: fsex-darwin-amd64.tar.gz
-          if-no-files-found: error
-      - name: Publish Linux build
-        uses: actions/upload-artifact@v3.1.0
-        with:
-          path: dist/fsex-linux-amd64.tar.gz
-          name: fsex-linux-amd64.tar.gz
-          if-no-files-found: error
-      - name: Publish Windows build
-        uses: actions/upload-artifact@v3.1.0
-        with:
-          path: dist/fsex-windows-amd64.tar.gz
-          name: fsex-windows-amd64.tar.gz
-          if-no-files-found: error
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: dist/fsex-darwin-amd64.tar.gz
+          asset_name: fsex-darwin-amd64.tar.gz
+          asset_content_type: application/octet-stream
+#       - name: Check built files
+#         run: pwd ; ls -lA dist/*
+#       - name: Publish Darwin build
+#         uses: actions/upload-artifact@v3.1.0
+#         with:
+#           path: dist/fsex-darwin-amd64.tar.gz
+#           name: fsex-darwin-amd64.tar.gz
+#           if-no-files-found: error
+#       - name: Publish Linux build
+#         uses: actions/upload-artifact@v3.1.0
+#         with:
+#           path: dist/fsex-linux-amd64.tar.gz
+#           name: fsex-linux-amd64.tar.gz
+#           if-no-files-found: error
+#       - name: Publish Windows build
+#         uses: actions/upload-artifact@v3.1.0
+#         with:
+#           path: dist/fsex-windows-amd64.tar.gz
+#           name: fsex-windows-amd64.tar.gz
+#           if-no-files-found: error
