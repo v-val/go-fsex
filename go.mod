@@ -1,4 +1,4 @@
-module gitlab.com/v-go/onfse
+module github.com/v-val/go-fsex
 
 go 1.17
 
