@@ -17,7 +17,9 @@ go run fsex.go -f <file|directory> [-f <file2|dir2> ...] command [args ...]
 ## Motivation
 Automated command execution upon changes in file system
 is pretty practical thing for certain purposes.
-There was no [cross-platform] provision for that, hence we built one.
+At the time of this repo creation we didn't know about more mature projects doing basically the same, namely:
+* [watchexec](https://github.com/watchexec/watchexec) written in RUST, feature rich, no cons
+* [entr](https://github.com/eradman/entr) written in C, likely doesn't work on Windows
 
 ## TODO
 Following improvements are planned: 
