@@ -33,12 +33,25 @@ func (d *stringListFlag) Set(value string) error {
 	return nil
 }
 
+// Init - get config parameters from env
+func init() {
+	//const ENV_VERBOSITY = "FSEX_VERBOSITY"
+	//s := os.Getenv(ENV_VERBOSITY)
+	//if s != "" {
+	//
+	//}
+}
+
 // Main
 func main() {
+	// Flag instructing to exit after detecting first changes
+	runOnce := false
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
+	flag.BoolVar(&runOnce, "1", runOnce, "Exit on first event")
 	flag.Parse()
+	//log.Printf("XXX Run once: %v", runOnce)
 	// Check that at least one FS entity and at least one word command are passed
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
 		log.Fatalf("Usage: fsex -f<path> [-f<path2> ...] <command>")
@@ -60,21 +73,26 @@ func main() {
 	notifications := make(chan bool)
 	// Channel to pass halt instruction
 	done := make(chan bool)
+
 	// Coro that gets and filters events and passes notification to main thread
 	go func() {
 		//lastEventTime := time.Now()
 		for {
 			select {
 			case event, ok := <-watcher.Events:
+				//log.Printf("XXX event: %v", event)
 				if !ok {
 					return
 				}
-				//log.Println("event:", event)
 				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
 					//t := time.Now()
 					//if t.Sub(lastEventTime) < 100 * time.Millisecond {}
 					//log.Println("modified file:", event.Name, event.Op)
 					notifications <- true
+					if runOnce {
+						done <- true
+						return
+					}
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
@@ -87,6 +105,7 @@ func main() {
 
 	// Pass FS entities to watcher
 	for _, f := range fsEntities {
+		//log.Printf("XXX Add %v", f)
 		err = watcher.Add(f)
 		if err != nil {
 			log.Fatal(err)
@@ -95,7 +114,7 @@ func main() {
 
 	// TODO: make constants
 	waitDuration := 100 * time.Millisecond
-	actionAfter := time.Second / 2
+	actionAfter := time.Second
 	idleLoopsMax := int(actionAfter / waitDuration)
 	//log.Printf("Idle Loops Max %v", idleLoopsMax)
 

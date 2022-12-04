@@ -21,6 +21,8 @@ At the time of this repo creation we didn't know about more mature projects doin
 * [watchexec](https://github.com/watchexec/watchexec) written in RUST, feature rich, no cons
 * [entr](https://github.com/eradman/entr) written in C, likely doesn't work on Windows
 
+Admitting superiority of listed competitors, we still make an effort to deliver similar solution in Golang.
+
 ## TODO
 Following improvements are planned: 
 * Configurable time to trigger command after
