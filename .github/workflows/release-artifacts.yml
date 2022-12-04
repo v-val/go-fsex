@@ -12,6 +12,7 @@ on:
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+# Seems github can't do go build for darwin/arm64
 jobs:
   generate:
     name: Generate cross-platform builds
@@ -22,7 +23,7 @@ jobs:
       - name: Generate build files
         uses: thatisuday/go-cross-build@v1
         with:
-            platforms: 'linux/amd64, darwin/amd64, darwin/arm64, windows/amd64'
+            platforms: 'linux/amd64, darwin/amd64, windows/amd64'
             package: 'main.go'
             name: 'fsex'
             compress: 'true'
