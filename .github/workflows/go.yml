@@ -19,7 +19,7 @@ jobs:
         go-version: 1.18
     
     - name: Get Deps
-      run: go get github.com/fsnotify/fsnotify
+      run: go mod tidy
 
     - name: Build
       run: go build -v ./...
