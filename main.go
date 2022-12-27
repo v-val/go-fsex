@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"github.com/fsnotify/fsnotify"
+	"github.com/inancgumus/screen"
 	"log"
 	"os"
 	"os/exec"
@@ -151,9 +152,9 @@ func main() {
 				bodyEndOk := strings.Repeat(".", 48)
 				if nevents > 0 && nidle >= idleLoopsMax {
 					if needClearScreenOnChanges {
-						//log.Println("Clear the screen..")
-						//screen.Clear()
-						//screen.MoveTopLeft()
+						log.Println("Clear the screen..")
+						screen.Clear()
+						screen.MoveTopLeft()
 					}
 					println(headOpen)
 					log.Printf("RUN %v", cmd)
