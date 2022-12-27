@@ -55,7 +55,6 @@ func main() {
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit on first event")
 	flag.Parse()
 	//log.Printf("XXX Run once: %v", runOnce)
-	log.Printf(`XXX clear: %v`, needClearScreenOnChanges)
 	// Check that at least one FS entity and at least one word command are passed
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
 		log.Fatalf("Usage: fsex -f<path> [-f<path2> ...] <command>")
