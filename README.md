@@ -8,11 +8,11 @@ Name stands for "file system events" and "execute".
 
 For compiled binary
 ```shell
-fsex -f <file|directory> [-f <file2|dir2> ...] command [args ...]
+fsex -f <file|directory> [-c] [-f <file2|dir2> ...] command [args ...]
 ```
 Source script can be invoked with interpreter:
 ```shell
-go run fsex.go -f <file|directory> [-f <file2|dir2> ...] command [args ...]
+go run fsex.go -f <file|directory> [-c] [-f <file2|dir2> ...] command [args ...]
 ```
 ## Motivation
 Automated command execution upon changes in file system
