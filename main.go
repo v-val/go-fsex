@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"github.com/fsnotify/fsnotify"
+	"github.com/inancgumus/screen"
 	"log"
 	"os"
 	"os/exec"
@@ -46,12 +47,16 @@ func init() {
 func main() {
 	// Flag instructing to exit after detecting first changes
 	runOnce := false
+	// Flag instructing to clear the screen before executing command
+	needClearScreenOnChanges := false
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
+	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit on first event")
 	flag.Parse()
 	//log.Printf("XXX Run once: %v", runOnce)
+	log.Printf(`XXX clear: %v`, needClearScreenOnChanges)
 	// Check that at least one FS entity and at least one word command are passed
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
 		log.Fatalf("Usage: fsex -f<path> [-f<path2> ...] <command>")
@@ -147,6 +152,11 @@ func main() {
 				bodyEndError := strings.Repeat("+", 48)
 				bodyEndOk := strings.Repeat(".", 48)
 				if nevents > 0 && nidle >= idleLoopsMax {
+					if needClearScreenOnChanges {
+						log.Println("Clear the screen..")
+						screen.Clear()
+						screen.MoveTopLeft()
+					}
 					println(headOpen)
 					log.Printf("RUN %v", cmd)
 					println(headClose)
