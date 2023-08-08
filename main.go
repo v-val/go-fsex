@@ -157,4 +157,9 @@ func main() {
 			nidle++
 		}
 	}
+	// When counters are non-zero
+	// it means that main loop was interrupted without flush
+	if nevents > 0 || nerrors > 0 {
+		app.execCommand()
+	}
 }
