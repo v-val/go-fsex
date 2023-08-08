@@ -61,7 +61,7 @@ func main() {
 	cmd := flag.Args()
 	log.Printf("Cmd %v", cmd)
 
-	fsex := fsex{cmd: cmd, flagClearScreenOnChanges: needClearScreenOnChanges}
+	app := fsex{cmd: cmd, flagClearScreenOnChanges: needClearScreenOnChanges}
 
 	// Create FS watcher
 	var watcher *fsnotify.Watcher
@@ -147,7 +147,7 @@ func main() {
 				time.Sleep(50 * time.Millisecond)
 			} else {
 				if nidle == 45 && (nevents > 0 || nerrors > 0) {
-					fsex.execCommand()
+					app.execCommand()
 					nevents = 0
 					nerrors = 0
 				} else {
