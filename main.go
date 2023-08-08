@@ -2,14 +2,9 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"github.com/fsnotify/fsnotify"
-	"github.com/inancgumus/screen"
 	"log"
-	"os"
-	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -28,9 +23,9 @@ func (s *stringListFlag) String() string {
 	return r
 }
 
-// Setter reqd to use type with flag package
-func (d *stringListFlag) Set(value string) error {
-	*d = append(*d, value)
+// Set Setter needed to use type with flag package
+func (s *stringListFlag) Set(value string) error {
+	*s = append(*s, value)
 	return nil
 }
 
@@ -66,48 +61,24 @@ func main() {
 	cmd := flag.Args()
 	log.Printf("Cmd %v", cmd)
 
+	fsex := fsex{cmd: cmd, flagClearScreenOnChanges: needClearScreenOnChanges}
+
 	// Create FS watcher
-	watcher, err := fsnotify.NewWatcher()
+	var watcher *fsnotify.Watcher
+	var err error
+	watcher, err = fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer watcher.Close()
-
-	// Channel to notify about detected FS events
-	notifications := make(chan bool)
-	// Channel to pass halt instruction
-	done := make(chan bool)
-
-	// Coro that gets and filters events and passes notification to main thread
-	go func() {
-		//lastEventTime := time.Now()
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				//log.Printf("XXX event: %v", event)
-				if !ok {
-					return
-				}
-				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
-					//t := time.Now()
-					//if t.Sub(lastEventTime) < 100 * time.Millisecond {}
-					//log.Println("modified file:", event.Name, event.Op)
-					notifications <- true
-					if runOnce {
-						done <- true
-						return
-					}
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				log.Println("error:", err)
-			}
+	defer func() {
+		err = watcher.Close()
+		if err != nil {
+			log.Fatal(err)
 		}
 	}()
 
 	// Pass FS entities to watcher
+	// TODO: search for subdirectories
 	for _, f := range fsEntities {
 		//log.Printf("XXX Add %v", f)
 		err = watcher.Add(f)
@@ -116,74 +87,74 @@ func main() {
 		}
 	}
 
-	// TODO: make constants
-	waitDuration := 100 * time.Millisecond
-	actionAfter := time.Second
-	idleLoopsMax := int(actionAfter / waitDuration)
-	//log.Printf("Idle Loops Max %v", idleLoopsMax)
-
 	// Number of events in last detected bunch
 	nevents := 0
+	// Number of events in last detected bunch
+	nerrors := 0
 	// Number of idle loops since last detected event
 	nidle := 0
-	for {
+	flagKeepRunning := true
+	for flagKeepRunning {
 		select {
-		case _ = <-done:
-			// Got halt command
-			return
-		case _ = <-notifications:
-			// Event detected, do nothing
-			nevents += 1
-			nidle = 0
-		default:
-			// When no event detected we have two options
-			// * Execute command once actionAfter since last event
-			// * idle otherwise
-			if nevents == 0 || nidle < idleLoopsMax {
-				time.Sleep(waitDuration)
-				if nevents > 0 {
-					nidle += 1
+		case event, ok := <-watcher.Events:
+			if ok {
+				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
+					nevents++
+					log.Printf("E%06d", nevents)
+					// TODO: add watchers for created dirs, delete for deleted dirs
 				}
+				nidle = 0
 			} else {
-				// Print header, execute command
-				headOpen := strings.Repeat("=", 48)
-				headClose := strings.Repeat("-", 48)
-				bodyEndError := strings.Repeat("+", 48)
-				bodyEndOk := strings.Repeat(".", 48)
-				if nevents > 0 && nidle >= idleLoopsMax {
-					if needClearScreenOnChanges {
-						log.Println("Clear the screen..")
-						screen.Clear()
-						screen.MoveTopLeft()
-					}
-					println(headOpen)
-					log.Printf("RUN %v", cmd)
-					println(headClose)
-					var cmd_ *exec.Cmd
-					if len(cmd) == 1 {
-						cmd_ = exec.Command(cmd[0])
-					} else {
-						cmd_ = exec.Command(cmd[0], cmd[1:]...)
-					}
-					cmd_.Stdout = os.Stdout
-					cmd_.Stderr = os.Stderr
-					err := cmd_.Run()
-					if err != nil {
-						println(bodyEndError)
-						log.Printf("Command failed: %s", err)
-					} else {
-						var ee *exec.ExitError
-						println(bodyEndOk)
-						if errors.As(err, &ee) {
-							log.Printf("Command returned %d", ee.ExitCode())
-						} else {
-							log.Printf("Command completed successfully")
-						}
-					}
+				log.Println("Events chan closed, finishing..")
+				flagKeepRunning = false
+			}
+		case err, ok := <-watcher.Errors:
+			if ok {
+				log.Println(err)
+				nerrors++
+				nidle = 0
+			} else {
+				log.Println("Errors chan closed, finishing..")
+				flagKeepRunning = false
+			}
+
+		default:
+			// Can be within short pause between two events / errors
+			// Do number of short sleeps until total sleep time exceeds timeout
+			if nidle < 10 {
+				// + 10 x 10us sleeps
+				// = 100us idle
+				time.Sleep(10 * time.Microsecond)
+			} else if nidle < 19 {
+				// 100us idle
+				// + 9 x 100us sleeps
+				// = 1ms idle
+				time.Sleep(100 * time.Microsecond)
+			} else if nidle < 28 {
+				// 1ms idle
+				// + 9 x 1ms sleeps
+				// = 10ms idle
+				time.Sleep(time.Millisecond)
+			} else if nidle < 37 {
+				// 10ms idle
+				// + 9 x 10ms sleeps
+				// = 100ms idle
+				time.Sleep(10 * time.Millisecond)
+			} else if nidle < 45 {
+				// 100ms idle
+				// + 8 * 50ms sleeps
+				// = 500ms idle
+				time.Sleep(50 * time.Millisecond)
+			} else {
+				if nidle == 45 && (nevents > 0 || nerrors > 0) {
+					fsex.execCommand()
 					nevents = 0
-					nidle = 0
+					nerrors = 0
+				} else {
+					time.Sleep(100 * time.Millisecond)
 				}
 			}
+			nidle++
 		}
 	}
 }
