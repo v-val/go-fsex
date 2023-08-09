@@ -44,6 +44,8 @@ func main() {
 	runOnce := false
 	// Flag instructing to clear the screen before executing command
 	needClearScreenOnChanges := false
+	// Disable watching subdirectories
+	flagEnabledSubdirWatchers := true
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
@@ -84,6 +86,20 @@ func main() {
 		err = watcher.Add(f)
 		if err != nil {
 			log.Fatal(err)
+		}
+		if flagEnabledSubdirWatchers {
+			var dirs []string
+			dirs, err = app.GetSubDirs(f)
+			if err != nil {
+				log.Fatalf(`Fail to get subdirs of "%s": %s`, f, err)
+			}
+			// list of subdirs is empty for non-directories
+			for _, d := range dirs {
+				err = watcher.Add(d)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
 		}
 	}
 
