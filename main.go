@@ -116,8 +116,18 @@ func main() {
 			if ok {
 				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
 					nevents++
+					//log.Printf("E%06d %v", nevents, event)
 					log.Printf("E%06d", nevents)
-					// TODO: add watchers for created dirs, delete for deleted dirs
+					// TODO: delete for deleted dirs
+					if event.Op&fsnotify.Create != 0 {
+						// Temp files can disappear faster than we check, so ignore errors
+						if ok, err = IsDir(event.Name); err == nil && ok {
+							err = watcher.Add(event.Name)
+							if err != nil {
+								log.Panic(err)
+							}
+						}
+					}
 				}
 				nidle = 0
 			} else {
