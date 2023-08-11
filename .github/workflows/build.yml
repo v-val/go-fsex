@@ -1,0 +1,140 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+name: Build App
+
+env:
+  app_name_: "fsex"
+  go_build_mode_: "pie"
+
+on:
+  push:
+    #    branches: [ "main" ]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Prepare
+        run: |
+          go mod init "github.com/${GITHUB_REPOSITORY}"
+          go mod tidy
+          go get .
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: Build
+        run: |
+          env GOOS=linux GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} -buildmode=${go_build_mode_} -v ./...
+          BZIP="-9" tar -cjf ${app_name_}-linux-amd64.tar.bz2 ${app_name_}
+          rm -vf ${app_name_}
+          
+          env GOOS=linux GOARCH=arm64 go build -o ${app_name_} -buildmode=${go_build_mode_} -v ./...
+          BZIP="-9" tar -cjf ${app_name_}-linux-arm64.tar.bz2 ${app_name_}
+          rm -vf ${app_name_}
+          
+          env GOOS=darwin GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} -v ./...
+          BZIP="-9" tar -cjf ${app_name_}-darwin-amd64.tar.bz2 ${app_name_}
+          rm -vf ${app_name_}
+          
+          env GOOS=darwin GOARCH=arm64 go build -o ${app_name_} -buildmode=${go_build_mode_} -v ./...
+          BZIP="-9" tar -cjf ${app_name_}-darwin-arm64.tar.bz2 ${app_name_}
+          rm -vf ${app_name_}
+          
+          env GOOS=windows GOARCH=386 go build -o ${app_name_}.exe -buildmode=${go_build_mode_} -v ./...
+          zip -9 ${app_name_}-windows-x86.zip ${app_name_}.exe
+          rm -vf ${app_name_}.exe
+
+          env GOOS=windows GOARCH=amd64 go build -o ${app_name_}.exe -buildmode=${go_build_mode_} -v ./...
+          zip -9 ${app_name_}-windows-amd64.zip ${app_name_}.exe
+          rm -vf ${app_name_}.exe
+
+      #      - name: version
+      #        run: echo "::set-output name=version::0.0.5"
+      #        id: version
+
+      - name: release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          draft: false
+          prerelease: false
+          #          release_name: Release ${{ steps.version.outputs.version }}
+          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.ref }}
+          body_path: CHANGES.md
+
+      - name: upload linux amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.app_name_ }}-linux-amd64.tar.bz2
+          asset_name: ${{ env.app_name_ }}-linux-amd64.tar.bz2
+          asset_content_type: application/${{ env.app_name_ }}-bzip2
+
+      - name: upload linux arm64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.app_name_ }}-linux-arm64.tar.bz2
+          asset_name: ${{ env.app_name_ }}-linux-arm64.tar.bz2
+          asset_content_type: application/${{ env.app_name_ }}-bzip2
+
+      - name: upload darwin amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.app_name_ }}-darwin-amd64.tar.bz2
+          asset_name: ${{ env.app_name_ }}-darwin-amd64.tar.bz2
+          asset_content_type: application/${{ env.app_name_ }}-bzip2
+
+      - name: upload darwin arm64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.app_name_ }}-darwin-arm64.tar.bz2
+          asset_name: ${{ env.app_name_ }}-darwin-arm64.tar.bz2
+          asset_content_type: application/${{ env.app_name_ }}-bzip2
+
+      - name: upload windows amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.app_name_ }}-windows-amd64.zip
+          asset_name: ${{ env.app_name_ }}-windows-amd64.zip
+          asset_content_type: application/zip
+
+      - name: upload windows x86 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.app_name_ }}-windows-x86.zip
+          asset_name: ${{ env.app_name_ }}-windows-x86.zip
+          asset_content_type: application/zip
