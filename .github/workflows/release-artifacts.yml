@@ -4,9 +4,9 @@ name: Generate release-artifacts
 
 # Controls when the workflow will run
 on:
-  release:
-    types:
-      - created
+#  release:
+#    types:
+#      - created
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
