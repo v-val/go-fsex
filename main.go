@@ -122,7 +122,7 @@ func main() {
 					//log.Printf("E%06d %v", nevents, event)
 					log.Printf("E%06d", nevents)
 					// TODO: delete for deleted dirs
-					if event.Op&fsnotify.Create != 0 {
+					if flagEnabledSubdirWatchers && event.Op&fsnotify.Create != 0 {
 						// Temp files can disappear faster than we check, so ignore errors
 						if ok, err = IsDir(event.Name); err == nil && ok {
 							err = watcher.Add(event.Name)
