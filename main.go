@@ -116,6 +116,9 @@ func main() {
 			if ok {
 				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
 					nevents++
+					if runOnce {
+						flagKeepRunning = false
+					}
 					//log.Printf("E%06d %v", nevents, event)
 					log.Printf("E%06d", nevents)
 					// TODO: delete for deleted dirs
