@@ -7,8 +7,8 @@ env:
   go_build_mode_:     "pie"
 #  app_sources_: ./...
   app_sources_:       .
-  version_no_prefix_: "${GITHUB_REF_NAME#v}"
-  go_build_ldflags_:  "-X github.com/${{ env.GITHUB_REPOSITORY }}/build_vars.Version=${{ env.GITHUB_REF_NAME }} -X github.com/${{ env.GITHUB_REPOSITORY }}/build_vars.AppName=${{ env.app_name_ }}"
+  version_no_prefix_: ${GITHUB_REF_NAME#v}
+  go_build_ldflags_:  -X github.com/${{ env.GITHUB_REPOSITORY }}/build_vars.Version=${{ env.GITHUB_REF_NAME }} -X github.com/${{ env.GITHUB_REPOSITORY }}/build_vars.AppName=${{ env.app_name_ }}
 
 on:
   push:
