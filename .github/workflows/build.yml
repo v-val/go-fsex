@@ -3,8 +3,12 @@
 name: Build App
 
 env:
-  app_name_: "fsex"
-  go_build_mode_: "pie"
+  app_name_:          "fsex"
+  go_build_mode_:     "pie"
+#  app_sources_: ./...
+  app_sources_:       .
+  version_no_prefix_: "${GITHUB_REF_NAME#v}"
+  go_build_ldflags_:  "-X github.com/${{ env.GITHUB_REPOSITORY }}/build_vars.Version=${{ env.GITHUB_REF_NAME }} -X github.com/${{ env.GITHUB_REPOSITORY }}/build_vars.AppName=${{ env.app_name_ }}"
 
 on:
   push:
@@ -38,27 +42,43 @@ jobs:
 
       - name: Build
         run: |
-          env GOOS=linux GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} -buildmode=${go_build_mode_} -v ./...
+          VERSION_NO_PREFIX_="${GITHUB_REF_NAME#v}"
+
+          echo "Build ${GITHUB_REPOSITORY} version ${GITHUB_REF_NAME#v} (${version_no_prefix_} / ${VERSION_NO_PREFIX_})"
+
+          env GOOS=linux GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
+            -ldflags "${go_build_ldflags_}" \
+            -v ${app_sources_}
           BZIP="-9" tar -cjf ${app_name_}-linux-amd64.tar.bz2 ${app_name_}
           rm -vf ${app_name_}
           
-          env GOOS=linux GOARCH=arm64 go build -o ${app_name_} -buildmode=${go_build_mode_} -v ./...
+          env GOOS=linux GOARCH=arm64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
+            -ldflags "${go_build_ldflags_}" \
+            -v ${app_sources_}
           BZIP="-9" tar -cjf ${app_name_}-linux-arm64.tar.bz2 ${app_name_}
           rm -vf ${app_name_}
-          
-          env GOOS=darwin GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} -v ./...
+
+          env GOOS=darwin GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
+            -ldflags "${go_build_ldflags_}" \
+            -v ${app_sources_}
           BZIP="-9" tar -cjf ${app_name_}-darwin-amd64.tar.bz2 ${app_name_}
           rm -vf ${app_name_}
           
-          env GOOS=darwin GOARCH=arm64 go build -o ${app_name_} -buildmode=${go_build_mode_} -v ./...
+          env GOOS=darwin GOARCH=arm64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
+            -ldflags "${go_build_ldflags_}" \
+            -v ${app_sources_}
           BZIP="-9" tar -cjf ${app_name_}-darwin-arm64.tar.bz2 ${app_name_}
           rm -vf ${app_name_}
           
-          env GOOS=windows GOARCH=386 go build -o ${app_name_}.exe -buildmode=${go_build_mode_} -v ./...
+          env GOOS=windows GOARCH=386 go build -o ${app_name_}.exe -buildmode=${go_build_mode_} \
+            -ldflags "${go_build_ldflags_}" \
+            -v ${app_sources_}
           zip -9 ${app_name_}-windows-x86.zip ${app_name_}.exe
           rm -vf ${app_name_}.exe
 
-          env GOOS=windows GOARCH=amd64 go build -o ${app_name_}.exe -buildmode=${go_build_mode_} -v ./...
+          env GOOS=windows GOARCH=amd64 go build -o ${app_name_}.exe -buildmode=${go_build_mode_} \
+            -ldflags "${go_build_ldflags_}" \
+            -v ${app_sources_}
           zip -9 ${app_name_}-windows-amd64.zip ${app_name_}.exe
           rm -vf ${app_name_}.exe
 

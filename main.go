@@ -3,7 +3,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/fsnotify/fsnotify"
+	build_vars "github.com/v-val/go-fsex/build-vars"
 	"log"
 	"time"
 )
@@ -46,12 +48,19 @@ func main() {
 	needClearScreenOnChanges := false
 	// Disable watching subdirectories
 	flagEnabledSubdirWatchers := true
+	// Print version and exit
+	flagPrintVersionAndExit := false
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit on first event")
+	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
 	flag.Parse()
+	if flagPrintVersionAndExit {
+		fmt.Printf("%s version %s", build_vars.AppName, build_vars.Version)
+		return
+	}
 	//log.Printf("XXX Run once: %v", runOnce)
 	// Check that at least one FS entity and at least one word command are passed
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
