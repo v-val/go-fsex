@@ -7,8 +7,6 @@ env:
   go_build_mode_:     "pie"
 #  app_sources_: ./...
   app_sources_:       .
-  version_no_prefix_: ${GITHUB_REF_NAME#v}
-  go_build_ldflags_:  -X github.com/${{ env.GITHUB_REPOSITORY }}/build_vars.Version=${{ env.GITHUB_REF_NAME }} -X github.com/${{ env.GITHUB_REPOSITORY }}/build_vars.AppName=${{ env.app_name_ }}
 
 on:
   push:
@@ -31,8 +29,14 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: Set up vars
+        run: |
+          echo "GO_PACKAGE_=github.com/${GITHUB_REPOSITORY}" >> ${GITHUB_ENV}
+          echo "APP_VERSION_=${GITHUB_REF_NAME#v}"           >> ${GITHUB_ENV}
+          echo "GO_BUILD_LDFLAGS_='-X ${{ env.GO_PACKAGE_ }}/build_vars.Version=${{ env.APP_VERSION_ }} -X ${{ env.GO_PACKAGE_ }}/build_vars.AppName=${app_name_}'" >> ${GITHUB_ENV}
+
       - name: Prepare
-          go mod init "github.com/${GITHUB_REPOSITORY}"
+#          go mod init "github.com/${GITHUB_REPOSITORY}"
         run: |
           go mod tidy
           go get .
@@ -42,9 +46,9 @@ jobs:
 
       - name: Build
         run: |
-          VERSION_NO_PREFIX_="${GITHUB_REF_NAME#v}"
+          APP_VERSION_="${GITHUB_REF_NAME#v}"
 
-          echo "Build ${GITHUB_REPOSITORY} version ${GITHUB_REF_NAME#v} (${version_no_prefix_} / ${VERSION_NO_PREFIX_})"
+          echo "Build ${GITHUB_REPOSITORY} version ${GITHUB_REF_NAME#v} (${{ env.APP_VERSION_ }} / ${APP_VERSION_})"
 
           env GOOS=linux GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
             -ldflags "${go_build_ldflags_}" \
