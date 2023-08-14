@@ -31,9 +31,10 @@ jobs:
 
       - name: Set up vars
         run: |
-          echo "GO_PACKAGE_=github.com/${GITHUB_REPOSITORY}" >> ${GITHUB_ENV}
-          echo "APP_VERSION_=${GITHUB_REF_NAME#v}"           >> ${GITHUB_ENV}
-          echo "GO_BUILD_LDFLAGS_='-X ${{ env.GO_PACKAGE_ }}/build_vars.Version=${{ env.APP_VERSION_ }} -X ${{ env.GO_PACKAGE_ }}/build_vars.AppName=${app_name_}'" >> ${GITHUB_ENV}
+          echo "go_package_=github.com/${GITHUB_REPOSITORY}" >> ${GITHUB_ENV}
+          echo "app_version_=${GITHUB_REF_NAME#v}"           >> ${GITHUB_ENV}
+          echo "archive_base_=${app_name_}-${{ env.app_version_ }}" >> ${GITHUB_ENV}
+          echo "go_build_ldflags_='-X ${{ env.go_package_ }}/build_vars.Version=${{ env.app_version_ }} -X ${{ env.go_package_ }}/build_vars.AppName=${app_name_}'" >> ${GITHUB_ENV}
 
       - name: Prepare
 #          go mod init "github.com/${GITHUB_REPOSITORY}"
@@ -46,44 +47,42 @@ jobs:
 
       - name: Build
         run: |
-          APP_VERSION_="${GITHUB_REF_NAME#v}"
-
-          echo "Build ${GITHUB_REPOSITORY} version ${GITHUB_REF_NAME#v} (${{ env.APP_VERSION_ }} / ${APP_VERSION_})"
+          echo "Build ${GITHUB_REPOSITORY} version ${{ env.app_version_ }}
 
           env GOOS=linux GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
-            -ldflags "${go_build_ldflags_}" \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
             -v ${app_sources_}
-          BZIP="-9" tar -cjf ${app_name_}-linux-amd64.tar.bz2 ${app_name_}
+          BZIP="-9" tar -cjf ${{ env.archive_base_ }}-linux-amd64.tar.bz2 ${app_name_}
           rm -vf ${app_name_}
-          
+
           env GOOS=linux GOARCH=arm64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
-            -ldflags "${go_build_ldflags_}" \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
             -v ${app_sources_}
-          BZIP="-9" tar -cjf ${app_name_}-linux-arm64.tar.bz2 ${app_name_}
+          BZIP="-9" tar -cjf ${{ env.archive_base_ }}-linux-arm64.tar.bz2 ${app_name_}
           rm -vf ${app_name_}
 
           env GOOS=darwin GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
-            -ldflags "${go_build_ldflags_}" \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
             -v ${app_sources_}
-          BZIP="-9" tar -cjf ${app_name_}-darwin-amd64.tar.bz2 ${app_name_}
+          BZIP="-9" tar -cjf ${{ env.archive_base_ }}-darwin-amd64.tar.bz2 ${app_name_}
           rm -vf ${app_name_}
           
           env GOOS=darwin GOARCH=arm64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
-            -ldflags "${go_build_ldflags_}" \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
             -v ${app_sources_}
-          BZIP="-9" tar -cjf ${app_name_}-darwin-arm64.tar.bz2 ${app_name_}
+          BZIP="-9" tar -cjf ${{ env.archive_base_ }}-darwin-arm64.tar.bz2 ${app_name_}
           rm -vf ${app_name_}
           
           env GOOS=windows GOARCH=386 go build -o ${app_name_}.exe -buildmode=${go_build_mode_} \
-            -ldflags "${go_build_ldflags_}" \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
             -v ${app_sources_}
-          zip -9 ${app_name_}-windows-x86.zip ${app_name_}.exe
+          zip -9 ${{ env.archive_base_ }}-windows-x86.zip ${app_name_}.exe
           rm -vf ${app_name_}.exe
 
           env GOOS=windows GOARCH=amd64 go build -o ${app_name_}.exe -buildmode=${go_build_mode_} \
-            -ldflags "${go_build_ldflags_}" \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
             -v ${app_sources_}
-          zip -9 ${app_name_}-windows-amd64.zip ${app_name_}.exe
+          zip -9 ${{ env.archive_base_ }}-windows-amd64.zip ${app_name_}.exe
           rm -vf ${app_name_}.exe
 
       #      - name: version
@@ -109,9 +108,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.app_name_ }}-linux-amd64.tar.bz2
-          asset_name: ${{ env.app_name_ }}-linux-amd64.tar.bz2
-          asset_content_type: application/${{ env.app_name_ }}-bzip2
+          asset_path: ${{ env.archive_base_ }}-linux-amd64.tar.bz2
+          asset_name: ${{ env.archive_base_ }}-linux-amd64.tar.bz2
+          asset_content_type: application/x-bzip2
 
       - name: upload linux arm64 artifact
         uses: actions/upload-release-asset@v1
@@ -119,9 +118,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.app_name_ }}-linux-arm64.tar.bz2
-          asset_name: ${{ env.app_name_ }}-linux-arm64.tar.bz2
-          asset_content_type: application/${{ env.app_name_ }}-bzip2
+          asset_path: ${{ env.archive_base_ }}-linux-arm64.tar.bz2
+          asset_name: ${{ env.archive_base_ }}-linux-arm64.tar.bz2
+          asset_content_type: application/x-bzip2
 
       - name: upload darwin amd64 artifact
         uses: actions/upload-release-asset@v1
@@ -129,9 +128,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.app_name_ }}-darwin-amd64.tar.bz2
-          asset_name: ${{ env.app_name_ }}-darwin-amd64.tar.bz2
-          asset_content_type: application/${{ env.app_name_ }}-bzip2
+          asset_path: ${{ env.archive_base_ }}-darwin-amd64.tar.bz2
+          asset_name: ${{ env.archive_base_ }}-darwin-amd64.tar.bz2
+          asset_content_type: application/x-bzip2
 
       - name: upload darwin arm64 artifact
         uses: actions/upload-release-asset@v1
@@ -139,9 +138,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.app_name_ }}-darwin-arm64.tar.bz2
-          asset_name: ${{ env.app_name_ }}-darwin-arm64.tar.bz2
-          asset_content_type: application/${{ env.app_name_ }}-bzip2
+          asset_path: ${{ env.archive_base_ }}-darwin-arm64.tar.bz2
+          asset_name: ${{ env.archive_base_ }}-darwin-arm64.tar.bz2
+          asset_content_type: application/x-bzip2
 
       - name: upload windows amd64 artifact
         uses: actions/upload-release-asset@v1
@@ -149,8 +148,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.app_name_ }}-windows-amd64.zip
-          asset_name: ${{ env.app_name_ }}-windows-amd64.zip
+          asset_path: ${{ env.archive_base_ }}-windows-amd64.zip
+          asset_name: ${{ env.archive_base_ }}-windows-amd64.zip
           asset_content_type: application/zip
 
       - name: upload windows x86 artifact
@@ -159,6 +158,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.app_name_ }}-windows-x86.zip
-          asset_name: ${{ env.app_name_ }}-windows-x86.zip
+          asset_path: ${{ env.archive_base_ }}-windows-x86.zip
+          asset_name: ${{ env.archive_base_ }}-windows-x86.zip
           asset_content_type: application/zip
