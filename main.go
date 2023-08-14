@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
-	build_vars "github.com/v-val/go-fsex/build-vars"
+	"github.com/v-val/go-fsex/build-vars"
 	"log"
 	"time"
 )
@@ -58,7 +58,7 @@ func main() {
 	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
 	flag.Parse()
 	if flagPrintVersionAndExit {
-		fmt.Printf("%s version %s", build_vars.AppName, build_vars.Version)
+		fmt.Printf("%s version %s\n", build_vars.AppName, build_vars.Version)
 		return
 	}
 	//log.Printf("XXX Run once: %v", runOnce)

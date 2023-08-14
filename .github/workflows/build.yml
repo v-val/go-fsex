@@ -3,6 +3,7 @@
 name: Build App
 
 env:
+  app_id_:            "FSEx"
   app_name_:          "fsex"
   go_build_mode_:     "pie"
 #  app_sources_: ./...
@@ -33,11 +34,12 @@ jobs:
         run: |
           echo "go_package_=github.com/${GITHUB_REPOSITORY}" >> ${GITHUB_ENV}
           echo "app_version_=${GITHUB_REF_NAME#v}"           >> ${GITHUB_ENV}
+          echo "exe_=$(echo '${app_id_}' | tr '[:upper:]' '[:lower:]')" >> ${GITHUB_ENV}
 
       - name: Set up vars, part II
         run: |
           echo "archive_base_=${app_name_}-${{ env.app_version_ }}" >> ${GITHUB_ENV}
-          echo "go_build_ldflags_=-X ${{ env.go_package_ }}/build_vars.Version=${{ env.app_version_ }} -X ${{ env.go_package_ }}/build_vars.AppName=${app_name_}" >> ${GITHUB_ENV}
+          echo "go_build_ldflags_=-X ${{ env.go_package_ }}/build-vars.Version=${{ env.app_version_ }} -X ${{ env.go_package_ }}/build-vars.AppName=${app_name_}" >> ${GITHUB_ENV}
 
       - name: Prepare
 #          go mod init "github.com/${GITHUB_REPOSITORY}"
@@ -50,7 +52,8 @@ jobs:
 
       - name: Build
         run: |
-          echo "Build ${GITHUB_REPOSITORY} version ${{ env.app_version_ }}"
+          exe_="${{ env.exe_ }}"
+          echo "Build ${exe_} from ${app_id_} ${GITHUB_REPOSITORY} version ${{ env.app_version_ }}"
 
           env GOOS=linux GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
             -ldflags "${{ env.go_build_ldflags_ }}" \
