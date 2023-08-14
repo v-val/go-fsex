@@ -47,7 +47,7 @@ jobs:
 
       - name: Build
         run: |
-          echo "Build ${GITHUB_REPOSITORY} version ${{ env.app_version_ }}
+          echo "Build ${GITHUB_REPOSITORY} version ${{ env.app_version_ }}"
 
           env GOOS=linux GOARCH=amd64 go build -o ${app_name_} -buildmode=${go_build_mode_} \
             -ldflags "${{ env.go_build_ldflags_ }}" \

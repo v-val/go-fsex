@@ -1,5 +1,9 @@
 # FSEx changes history
 
+## 2023 August 13
+
+Add `-version` flag to check app version.
+
 ## 2023 August 11
 
 In cases when target to monitor (set with `-f` flag) is a directory,
