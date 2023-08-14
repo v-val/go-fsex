@@ -37,7 +37,7 @@ jobs:
       - name: Set up vars, part II
         run: |
           echo "archive_base_=${app_name_}-${{ env.app_version_ }}" >> ${GITHUB_ENV}
-          echo "go_build_ldflags_='-X ${{ env.go_package_ }}/build_vars.Version=${{ env.app_version_ }} -X ${{ env.go_package_ }}/build_vars.AppName=${app_name_}'" >> ${GITHUB_ENV}
+          echo "go_build_ldflags_=-X ${{ env.go_package_ }}/build_vars.Version=${{ env.app_version_ }} -X ${{ env.go_package_ }}/build_vars.AppName=${app_name_}" >> ${GITHUB_ENV}
 
       - name: Prepare
 #          go mod init "github.com/${GITHUB_REPOSITORY}"
