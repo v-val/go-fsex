@@ -2,7 +2,7 @@
 
 ## 2023 August 13
 
-Add `-version` flag to check app version.
+Add `-version` and `-about` flags for checking app details.
 
 ## 2023 August 11
 

@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const FirstPublicationYear = "2022"
+
 // Type to store list of strings passed with repeating CLI flag
 type stringListFlag []string
 
@@ -50,15 +52,27 @@ func main() {
 	flagEnabledSubdirWatchers := true
 	// Print version and exit
 	flagPrintVersionAndExit := false
+	// Print about and exit
+	flagPrintAboutAndExit := false
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit on first event")
 	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
+	flag.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
 	flag.Parse()
 	if flagPrintVersionAndExit {
-		fmt.Printf("%s version %s\n", build_vars.AppName, build_vars.Version)
+		fmt.Println(build_vars.GitRef)
+		return
+	}
+	if flagPrintAboutAndExit {
+		years := FirstPublicationYear
+		currentYear := time.Now().Format("2006")
+		if currentYear > years {
+			years = fmt.Sprintf("%s-%s", years, currentYear)
+		}
+		fmt.Printf("%s version %s © %s %s\n", build_vars.AppName, build_vars.Version, years, build_vars.HomePage)
 		return
 	}
 	//log.Printf("XXX Run once: %v", runOnce)
