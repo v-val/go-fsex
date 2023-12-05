@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -28,7 +27,7 @@ func (f *fsex) GetSubDirs(path string) ([]string, error) {
 					var subdirs []string
 					subdirs, err = f.GetSubDirs(filepath.Join(path, d.Name()))
 					if err != nil {
-						log.Printf("Error: %s", err)
+						Printf("Error: %s", err)
 						break
 					}
 					t = append(t, subdirs...)

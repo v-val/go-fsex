@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"github.com/inancgumus/screen"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -34,22 +33,22 @@ func (f *fsex) execCommand() {
 	cmd_.Stdout = os.Stdout
 	cmd_.Stderr = os.Stderr
 	if f.flagClearScreenOnChanges {
-		log.Println("Clear the screen..")
+		Print("Clear the screen..")
 		screen.Clear()
 		screen.MoveTopLeft()
 	}
-	log.Printf("RUN %v\n"+headClose, f.cmd)
+	Printf("RUN %v\n"+headClose, f.cmd)
 	err := cmd_.Run()
 	if err != nil {
 		var ee *exec.ExitError
 		print(bodyEndError)
 		if errors.As(err, &ee) {
-			log.Printf("Command returned %d", ee.ExitCode())
+			Printf("Command returned %d", ee.ExitCode())
 		} else {
-			log.Printf("Fail to run command: %s", err)
+			Printf("Fail to run command: %s", err)
 		}
 	} else {
 		print(bodyEndOk)
-		log.Print("Command completed successfully")
+		Print("Command completed successfully")
 	}
 }

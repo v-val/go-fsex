@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/v-val/go-fsex/build-vars"
-	"log"
+	"strconv"
 	"time"
 )
 
@@ -33,6 +33,22 @@ func (s *stringListFlag) Set(value string) error {
 	return nil
 }
 
+// Type to handle flag incrementing underlying parameter
+type incrementableInt int
+
+func (i *incrementableInt) String() string {
+	return strconv.Itoa(int(*i))
+}
+
+func (i *incrementableInt) IsBoolFlag() bool {
+	return true
+}
+
+func (i *incrementableInt) Set(string) error {
+	(*i)++
+	return nil
+}
+
 // Init - get config parameters from env
 func init() {
 	//const ENV_VERBOSITY = "FSEX_VERBOSITY"
@@ -54,14 +70,18 @@ func main() {
 	flagPrintVersionAndExit := false
 	// Print about and exit
 	flagPrintAboutAndExit := false
+	// Quietness level
+	quietness := incrementableInt(0)
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
+	flag.Var(&quietness, "q", "Single occurrence suppresses diagnostics,\ndouble - diagnostics and command STDOUT,\ntriple - diagnostics, command STDOUT and command STDERR")
 	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
 	flag.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
 	flag.Parse()
+	SetQuietness(quietness)
 	if flagPrintVersionAndExit {
 		fmt.Println(build_vars.GitRef)
 		return
@@ -75,16 +95,16 @@ func main() {
 		fmt.Printf("%s version %s © %s %s\n", build_vars.AppName, build_vars.Version, years, build_vars.HomePage)
 		return
 	}
-	//log.Printf("XXX Run once: %v", runOnce)
+	//Printf("XXX Run once: %v", runOnce)
 	// Check that at least one FS entity and at least one word command are passed
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
-		log.Fatalf("Usage: fsex -f<path> [-f<path2> ...] <command>")
+		Fatalf("Usage: fsex [options] -f<path> <command>")
 	}
-	log.Printf("Dir %v", fsEntities)
+	Printf("Dir %v", fsEntities)
 
 	// Remaining CLi args treated as command
 	cmd := flag.Args()
-	log.Printf("Cmd %v", cmd)
+	Printf("Cmd %v", cmd)
 
 	app := fsex{cmd: cmd, flagClearScreenOnChanges: needClearScreenOnChanges}
 
@@ -93,34 +113,34 @@ func main() {
 	var err error
 	watcher, err = fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		Fatal(err)
 	}
 	defer func() {
 		err = watcher.Close()
 		if err != nil {
-			log.Fatal(err)
+			Fatal(err)
 		}
 	}()
 
 	// Pass FS entities to watcher
 	// TODO: search for subdirectories
 	for _, f := range fsEntities {
-		//log.Printf("XXX Add %v", f)
+		//Printf("XXX Add %v", f)
 		err = watcher.Add(f)
 		if err != nil {
-			log.Fatal(err)
+			Fatal(err)
 		}
 		if flagEnabledRecursiveWatch {
 			var dirs []string
 			dirs, err = app.GetSubDirs(f)
 			if err != nil {
-				log.Fatalf(`Fail to get subdirs of "%s": %s`, f, err)
+				Fatalf(`Fail to get subdirs of "%s": %s`, f, err)
 			}
 			// list of subdirs is empty for non-directories
 			for _, d := range dirs {
 				err = watcher.Add(d)
 				if err != nil {
-					log.Fatal(err)
+					Fatal(err)
 				}
 			}
 		}
@@ -142,31 +162,31 @@ func main() {
 					if runOnce {
 						flagKeepRunning = false
 					}
-					//log.Printf("E%06d %v", nevents, event)
-					log.Printf("E%06d", nevents)
+					//Printf("E%06d %v", nevents, event)
+					Printf("E%06d", nevents)
 					// TODO: delete for deleted dirs
 					if flagEnabledRecursiveWatch && event.Op&fsnotify.Create != 0 {
 						// Temp files can disappear faster than we check, so ignore errors
 						if ok, err = IsDir(event.Name); err == nil && ok {
 							err = watcher.Add(event.Name)
 							if err != nil {
-								log.Panic(err)
+								Panic(err)
 							}
 						}
 					}
 				}
 				nidle = 0
 			} else {
-				log.Println("Events chan closed, finishing..")
+				Print("Events chan closed, finishing..")
 				flagKeepRunning = false
 			}
 		case err, ok := <-watcher.Errors:
 			if ok {
-				log.Println(err)
+				Print(err)
 				nerrors++
 				nidle = 0
 			} else {
-				log.Println("Errors chan closed, finishing..")
+				Print("Errors chan closed, finishing..")
 				flagKeepRunning = false
 			}
 
