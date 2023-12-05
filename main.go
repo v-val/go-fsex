@@ -58,7 +58,7 @@ func main() {
 	var fsEntities stringListFlag
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
-	flag.BoolVar(&runOnce, "1", runOnce, "Exit on first event")
+	flag.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
 	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
 	flag.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
 	flag.Parse()
