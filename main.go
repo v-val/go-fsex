@@ -176,7 +176,7 @@ func main() {
 						flagKeepRunning = false
 					}
 					//Printf("E%06d %v", nevents, event)
-					Printf("E%06d", nevents)
+					Debugf("E%06d", nevents)
 					// TODO: delete for deleted dirs
 					if flagEnabledRecursiveWatch && event.Op&fsnotify.Create != 0 {
 						// Temp files can disappear faster than we check, so ignore errors
