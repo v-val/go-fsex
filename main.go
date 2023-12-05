@@ -49,7 +49,7 @@ func main() {
 	// Flag instructing to clear the screen before executing command
 	needClearScreenOnChanges := false
 	// Disable watching subdirectories
-	flagEnabledSubdirWatchers := true
+	flagEnabledRecursiveWatch := true
 	// Print version and exit
 	flagPrintVersionAndExit := false
 	// Print about and exit
@@ -110,7 +110,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if flagEnabledSubdirWatchers {
+		if flagEnabledRecursiveWatch {
 			var dirs []string
 			dirs, err = app.GetSubDirs(f)
 			if err != nil {
@@ -145,7 +145,7 @@ func main() {
 					//log.Printf("E%06d %v", nevents, event)
 					log.Printf("E%06d", nevents)
 					// TODO: delete for deleted dirs
-					if flagEnabledSubdirWatchers && event.Op&fsnotify.Create != 0 {
+					if flagEnabledRecursiveWatch && event.Op&fsnotify.Create != 0 {
 						// Temp files can disappear faster than we check, so ignore errors
 						if ok, err = IsDir(event.Name); err == nil && ok {
 							err = watcher.Add(event.Name)
