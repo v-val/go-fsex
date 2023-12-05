@@ -1,5 +1,12 @@
 # FSEx changes history
 
+## 2023 December 5
+
+Add CLI flags for tuning output:
+* `-q` suppresses `fsex` messages
+* `-O` suppresses STDOUT of the command executed
+* `-E` suppresses STDERR of the command executed
+
 ## 2023 August 13
 
 Add `-version` and `-about` flags for checking app details.
