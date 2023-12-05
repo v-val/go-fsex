@@ -12,6 +12,8 @@ type fsex struct {
 	// Configuration Parameters
 	cmd                      []string
 	flagClearScreenOnChanges bool
+	flagSuppressStdout       bool
+	flagSuppressStderr       bool
 	// Constants
 	// Operational vars
 }
@@ -30,8 +32,12 @@ func (f *fsex) execCommand() {
 	} else {
 		cmd_ = exec.Command(f.cmd[0], f.cmd[1:]...)
 	}
-	cmd_.Stdout = os.Stdout
-	cmd_.Stderr = os.Stderr
+	if !f.flagSuppressStdout {
+		cmd_.Stdout = os.Stdout
+	}
+	if !f.flagSuppressStderr {
+		cmd_.Stderr = os.Stderr
+	}
 	if f.flagClearScreenOnChanges {
 		Print("Clear the screen..")
 		screen.Clear()
@@ -41,14 +47,18 @@ func (f *fsex) execCommand() {
 	err := cmd_.Run()
 	if err != nil {
 		var ee *exec.ExitError
-		print(bodyEndError)
+		if loggingInstance.Quietness <= 0 {
+			print(bodyEndError)
+		}
 		if errors.As(err, &ee) {
 			Printf("Command returned %d", ee.ExitCode())
 		} else {
 			Printf("Fail to run command: %s", err)
 		}
 	} else {
-		print(bodyEndOk)
+		if loggingInstance.Quietness <= 0 {
+			print(bodyEndOk)
+		}
 		Print("Command completed successfully")
 	}
 }

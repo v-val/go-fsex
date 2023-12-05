@@ -70,18 +70,26 @@ func main() {
 	flagPrintVersionAndExit := false
 	// Print about and exit
 	flagPrintAboutAndExit := false
-	// Quietness level
-	quietness := incrementableInt(0)
+	// Diagnostics quietness level
+	flagSuppressDiagnostics := false
+	// Hide command stdout
+	flagSuppressStdout := false
+	// Hide command stderr
+	flagSuppressStderr := false
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
-	flag.Var(&quietness, "q", "Single occurrence suppresses diagnostics,\ndouble - diagnostics and command STDOUT,\ntriple - diagnostics, command STDOUT and command STDERR")
+	flag.BoolVar(&flagSuppressDiagnostics, "q", flagSuppressDiagnostics, "Suppress diagnostics")
+	flag.BoolVar(&flagSuppressStdout, "O", flagSuppressStdout, "Hide command STDOUT")
+	flag.BoolVar(&flagSuppressStderr, "E", flagSuppressStderr, "Hide command STDERR")
 	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
 	flag.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
 	flag.Parse()
-	SetQuietness(quietness)
+	if flagSuppressDiagnostics {
+		SetQuietness(incrementableInt(1))
+	}
 	if flagPrintVersionAndExit {
 		fmt.Println(build_vars.GitRef)
 		return
@@ -106,7 +114,12 @@ func main() {
 	cmd := flag.Args()
 	Printf("Cmd %v", cmd)
 
-	app := fsex{cmd: cmd, flagClearScreenOnChanges: needClearScreenOnChanges}
+	app := fsex{
+		cmd:                      cmd,
+		flagClearScreenOnChanges: needClearScreenOnChanges,
+		flagSuppressStdout:       flagSuppressStdout,
+		flagSuppressStderr:       flagSuppressStderr,
+	}
 
 	// Create FS watcher
 	var watcher *fsnotify.Watcher

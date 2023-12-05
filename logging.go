@@ -17,13 +17,13 @@ func SetQuietness(q incrementableInt) {
 }
 
 func Print(message any) {
-	if loggingInstance.Quietness <= 0 {
+	if loggingInstance.Quietness < 1 {
 		L.Println(message)
 	}
 }
 
 func Printf(format string, args ...any) {
-	if loggingInstance.Quietness <= 0 {
+	if loggingInstance.Quietness < 1 {
 		L.Printf(format, args...)
 	}
 }
