@@ -147,9 +147,9 @@ func main() {
 								Panic(err)
 							}
 						}
+						nidle = 0
 					}
 				}
-				nidle = 0
 			} else {
 				Print("Events chan closed, finishing..")
 				flagKeepRunning = false
