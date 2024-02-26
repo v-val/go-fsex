@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/v-val/go-fsex/build-vars"
+	"path/filepath"
 	"time"
 )
 
@@ -40,6 +41,9 @@ func main() {
 	flagSuppressStderr := false
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
+	// List of globs to ignore
+	var ignorePatterns stringListFlag
+	// TODO: verify uniqueness
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
@@ -48,6 +52,7 @@ func main() {
 	flag.BoolVar(&flagSuppressStderr, "E", flagSuppressStderr, "Hide command STDERR")
 	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
 	flag.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
+	flag.Var(&ignorePatterns, "x", "Pattern to ignore.")
 	flag.Parse()
 	if flagSuppressDiagnostics {
 		SetQuietness(incrementableInt(1))
@@ -71,6 +76,24 @@ func main() {
 		Fatalf("Usage: fsex [options] -f<path> <command>")
 	}
 	Printf("Dir %v", fsEntities)
+	// Check that watch and ignore lists do not intersect
+	// TODO: use not straightforward matching, but:
+	// (A) when pattern contains path separator, it's applied to entire pathname
+	// (B) when pattern ends with path separator, it's applied to dirs only
+	// (C) otherwise pattern applied to name only. NB: now we support only this case.
+	// TODO: work through various ways to specify
+	// * path: absolute, all relatives
+	// * pattern: absolute, relative, all possible meanings
+	// For now we assume that pattern is to match only name
+	for _, f := range fsEntities {
+		for _, p := range ignorePatterns {
+			if m, err := filepath.Match(p, filepath.Base(f)); err != nil {
+				Fatalf(`Invalid ignore pattern "%s"`, p)
+			} else if m {
+				Fatalf(`Conflict: "%s" matched by ignore pattern "%s"`, f, p)
+			}
+		}
+	}
 
 	// Remaining CLi args treated as command
 	cmd := flag.Args()
@@ -99,7 +122,7 @@ func main() {
 
 	// Pass FS entities to watcher
 	for _, f := range fsEntities {
-		//Printf("XXX Add %v", f)
+		// Top level entities already checked vs. ignore patterns
 		err = watcher.Add(f)
 		if err != nil {
 			Fatal(err)
@@ -108,13 +131,23 @@ func main() {
 			var dirs []string
 			dirs, err = app.GetSubDirs(f)
 			if err != nil {
-				Fatalf(`Fail to get subdirs of "%s": %s`, f, err)
+				Fatalf(`Fail to recurse to "%s": %s`, f, err)
 			}
 			// list of subdirs is empty for non-directories
 			for _, d := range dirs {
-				err = watcher.Add(d)
-				if err != nil {
-					Fatal(err)
+				var isIgnored bool = false
+				for _, p := range ignorePatterns {
+					// At this stage we know that patterns are ok
+					if isIgnored, _ = filepath.Match(p, filepath.Base(d)); isIgnored {
+						Printf(`"%s" ignored by "%s"`, d, p)
+						break
+					}
+				}
+				if !isIgnored {
+					err = watcher.Add(d)
+					if err != nil {
+						Fatal(err)
+					}
 				}
 			}
 		}
@@ -132,19 +165,29 @@ func main() {
 		case event, ok := <-watcher.Events:
 			if ok {
 				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
-					nevents++
-					if runOnce {
-						flagKeepRunning = false
+					Tracef(`Got %s`, event)
+					isIgnored := false
+					for _, p := range ignorePatterns {
+						if isIgnored, _ = filepath.Match(p, filepath.Base(event.Name)); isIgnored {
+							Debugf(`"%s" ignored by "%s"`, event.Name, p)
+							isIgnored = true
+						}
 					}
-					//Printf("E%06d %v", nevents, event)
-					Debugf("E%06d", nevents)
-					// TODO: delete for deleted dirs
-					if flagEnabledRecursiveWatch && event.Op&fsnotify.Create != 0 {
-						// Temp files can disappear faster than we check, so ignore errors
-						if ok, err = IsDir(event.Name); err == nil && ok {
-							err = watcher.Add(event.Name)
-							if err != nil {
-								Panic(err)
+					if !isIgnored {
+						nevents++
+						if runOnce {
+							flagKeepRunning = false
+						}
+						//Printf("E%06d %v", nevents, event)
+						Debugf("E%06d", nevents)
+						// TODO: delete for deleted dirs
+						if flagEnabledRecursiveWatch && event.Op&fsnotify.Create != 0 {
+							// Temp files can disappear faster than we check, so ignore errors
+							if ok, err = IsDir(event.Name); err == nil && ok {
+								err = watcher.Add(event.Name)
+								if err != nil {
+									Panic(err)
+								}
 							}
 						}
 						nidle = 0
