@@ -169,8 +169,8 @@ func main() {
 					isIgnored := false
 					for _, p := range ignorePatterns {
 						if isIgnored, _ = filepath.Match(p, filepath.Base(event.Name)); isIgnored {
-							Debugf(`"%s" ignored by "%s"`, event.Name, p)
-							isIgnored = true
+							Debugf(`"%s" ignored by "%s" (%v)`, event.Name, p, isIgnored)
+							break
 						}
 					}
 					if !isIgnored {
@@ -199,7 +199,7 @@ func main() {
 			}
 		case err, ok := <-watcher.Errors:
 			if ok {
-				Print(err)
+				Printf(`Watch error: %v`, err)
 				nerrors++
 				nidle = 0
 			} else {
