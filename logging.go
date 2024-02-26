@@ -2,18 +2,30 @@ package main
 
 import (
 	L "log"
+	"os"
+	"strconv"
 )
 
 type logging_ struct {
 	Quietness incrementableInt
 }
 
-var loggingInstance = logging_{
-	Quietness: incrementableInt(0),
-}
+var loggingInstance logging_
 
 func SetQuietness(q incrementableInt) {
 	loggingInstance.Quietness = q
+}
+
+func Trace(message any) {
+	if loggingInstance.Quietness < -1 {
+		L.Println(message)
+	}
+}
+
+func Tracef(format string, args ...any) {
+	if loggingInstance.Quietness < -1 {
+		L.Printf(format, args...)
+	}
 }
 
 func Debug(message any) {
@@ -54,4 +66,16 @@ func Panic(message any) {
 
 func Panicf(format string, args ...any) {
 	L.Panicf(format, args...)
+}
+
+func init() {
+	const EnvVerbosity = "FSEX_VERBOSITY"
+	s := os.Getenv(EnvVerbosity)
+	if s != "" {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			L.Panicf(`Environment "%s" must be int`, EnvVerbosity)
+		}
+		SetQuietness(incrementableInt(i))
+	}
 }
