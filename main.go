@@ -136,7 +136,6 @@ func main() {
 	}()
 
 	// Pass FS entities to watcher
-	// TODO: search for subdirectories
 	for _, f := range fsEntities {
 		//Printf("XXX Add %v", f)
 		err = watcher.Add(f)
