@@ -1,5 +1,11 @@
 # FSEx changes history
 
+## 2024 February 26
+
+CLI flag added:
+* `-x {glob}` instructs `fsex` to ignore matching files or directories.  
+For the moment only names of files or directories are checked.
+
 ## 2023 December 5
 
 Add CLI flags for tuning output:
