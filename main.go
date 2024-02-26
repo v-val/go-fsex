@@ -6,48 +6,10 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/v-val/go-fsex/build-vars"
-	"strconv"
 	"time"
 )
 
 const FirstPublicationYear = "2022"
-
-// Type to store list of strings passed with repeating CLI flag
-type stringListFlag []string
-
-// Converter to string reqd to use type with flag package
-func (s *stringListFlag) String() string {
-	r := ""
-	for _, v := range *s {
-		if len(r) > 0 {
-			r += ", "
-		}
-		r += v
-	}
-	return r
-}
-
-// Set Setter needed to use type with flag package
-func (s *stringListFlag) Set(value string) error {
-	*s = append(*s, value)
-	return nil
-}
-
-// Type to handle flag incrementing underlying parameter
-type incrementableInt int
-
-func (i *incrementableInt) String() string {
-	return strconv.Itoa(int(*i))
-}
-
-func (i *incrementableInt) IsBoolFlag() bool {
-	return true
-}
-
-func (i *incrementableInt) Set(string) error {
-	(*i)++
-	return nil
-}
 
 // Init - get config parameters from env
 func init() {
