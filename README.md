@@ -8,16 +8,21 @@ Name stands for "file system events" and "execute".
 
 For compiled binary
 ```shell
-fsex -f <file|directory> [-c] [-f <file2|dir2> ...] command [args ...]
+fsex [options] -f <file|directory> [-f ...] command [args ...]
 ```
-Source script can be invoked with interpreter:
+E.g.
 ```shell
-go run fsex.go -f <file|directory> [-c] [-f <file2|dir2> ...] command [args ...]
+fsex -f . cmake --build ./build
+```
+or
+```shell
+fsex -f . bash -c 'cmake -S. -B./build && cmake --build ./build'
 ```
 ## Motivation
-Automated command execution upon changes in file system
-is pretty practical thing for certain purposes.
-At the time of this repo creation we didn't know about more mature projects doing basically the same, namely:
+Triggering command upon changes in file system is a pretty practical task.
+Example would be starting report generation when data uploaded to server.
+
+## See also
 * [watchexec](https://github.com/watchexec/watchexec) written in RUST, feature rich, no cons
 * [entr](https://github.com/eradman/entr) written in C, likely doesn't work on Windows
 
