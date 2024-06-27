@@ -175,9 +175,6 @@ func main() {
 					}
 					if !isIgnored {
 						nevents++
-						if runOnce {
-							flagKeepRunning = false
-						}
 						//Printf("E%06d %v", nevents, event)
 						Debugf("E%06d", nevents)
 						// TODO: delete for deleted dirs
@@ -239,6 +236,9 @@ func main() {
 					app.execCommand()
 					nevents = 0
 					nerrors = 0
+					if runOnce {
+						flagKeepRunning = false
+					}
 				} else {
 					time.Sleep(100 * time.Millisecond)
 				}
