@@ -1,5 +1,8 @@
 # FSEx changes history
 
+## 2024 June 28
+* CLI switch `-1` instructs `fsex` to exit after one command execution. 
+
 ## 2024 February 26
 
 CLI flag added:
