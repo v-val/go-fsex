@@ -6,7 +6,6 @@ Name stands for "file system events" and "execute".
 
 ## Usage
 
-For compiled binary
 ```shell
 fsex [options] -f <file|directory> [-f ...] command [args ...]
 ```
@@ -32,7 +31,6 @@ Admitting superiority of listed competitors, we still make an effort to deliver 
 Following improvements are planned: 
 * Configurable time to trigger command after
 * Nicer output
-* Quiet options: suppress `fsex` output or command output
 
 [//]: # (## Getting started)
 
