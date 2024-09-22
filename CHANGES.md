@@ -1,5 +1,10 @@
 # FSEx changes history
 
+## 2024 September 23
+
+* filtering (`-x`) updated to use `.gitignore` matching rules
+* Added CLI option `-X {ignore file}` enables load of patterns to ignore from file.
+
 ## 2024 June 28
 * CLI switch `-1` instructs `fsex` to exit after one command execution. 
 
