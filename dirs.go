@@ -14,7 +14,7 @@ func IsDir(path string) (bool, error) {
 	return r, err
 }
 
-func (f *fsex) GetSubDirs(path string) ([]string, error) {
+func (app *fsex) GetSubDirs(path string, filter FileFilter) ([]string, error) {
 	var r []string
 	isDir, err := IsDir(path)
 	if err == nil && isDir {
@@ -24,13 +24,18 @@ func (f *fsex) GetSubDirs(path string) ([]string, error) {
 		if err == nil {
 			for _, d := range entries {
 				if d.IsDir() {
-					var subdirs []string
-					subdirs, err = f.GetSubDirs(filepath.Join(path, d.Name()))
-					if err != nil {
-						Printf("Error: %s", err)
-						break
+					p := filepath.Join(path, d.Name())
+					if filter == nil || !filter.Match(p) {
+						var subdirs []string
+						subdirs, err = app.GetSubDirs(p, filter)
+						if err != nil {
+							Printf("Error: %s", err)
+							break
+						}
+						t = append(t, subdirs...)
+					} else {
+						Debugf(`ignore "%s"`, p)
 					}
-					t = append(t, subdirs...)
 				}
 			}
 			if err == nil {

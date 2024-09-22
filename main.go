@@ -153,7 +153,7 @@ func main() {
 		}
 		if flagEnabledRecursiveWatch {
 			var dirs []string
-			dirs, err = app.GetSubDirs(f)
+			dirs, err = app.GetSubDirs(f, filter)
 			if err != nil {
 				Fatalf(`Fail to recurse to "%s": %s`, f, err)
 			}
