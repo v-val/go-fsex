@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/v-val/go-fsex/build-vars"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -41,8 +42,10 @@ func main() {
 	flagSuppressStderr := false
 	// Get list of filesystem entities to watch from CLI
 	var fsEntities stringListFlag
-	// List of globs to ignore
+	// Patterns of pathnames to ignore
 	var ignorePatterns stringListFlag
+	// Files with patterns of pathnames to ignore (one per line)
+	var ignoreFiles stringListFlag
 	// TODO: verify uniqueness
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
@@ -53,6 +56,8 @@ func main() {
 	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
 	flag.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
 	flag.Var(&ignorePatterns, "x", "Pattern to ignore.")
+	flag.Var(&ignoreFiles, "X", "Files with patterns to ignore.\n"+
+		`Please note: ".zzup.ignore" and ".rsync.ignore" auto-included`)
 	flag.Parse()
 	if flagSuppressDiagnostics {
 		SetQuietness(incrementableInt(1))
@@ -75,6 +80,27 @@ func main() {
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
 		Fatalf("Usage: fsex [options] -f<path> <command>")
 	}
+	//
+	// Build ignore filters
+	filter := NewFileFilter(ignorePatterns...)
+	for _, d := range fsEntities {
+		if isDir, _ := IsDir(d); isDir {
+			for _, i := range []string{".zzup.ignore", ".rsync.ignore"} {
+				i = filepath.Join(d, i)
+				_, err := os.Stat(i)
+				if err == nil {
+					ignoreFiles = append(ignoreFiles, i)
+				}
+			}
+		}
+	}
+	for _, f := range ignoreFiles {
+		if err := filter.LoadFile(f); err != nil {
+			Fatalf(`Error parsing ignore file "%s": %s`, f, err)
+		}
+		Debugf(`ignore file "%s" loaded`, f)
+	}
+	//
 	Printf("Dir %v", fsEntities)
 	// Check that watch and ignore lists do not intersect
 	// TODO: use not straightforward matching, but:
@@ -86,18 +112,16 @@ func main() {
 	// * pattern: absolute, relative, all possible meanings
 	// For now we assume that pattern is to match only name
 	for _, f := range fsEntities {
-		for _, p := range ignorePatterns {
-			if m, err := filepath.Match(p, filepath.Base(f)); err != nil {
-				Fatalf(`Invalid ignore pattern "%s"`, p)
-			} else if m {
-				Fatalf(`Conflict: "%s" matched by ignore pattern "%s"`, f, p)
-			}
+		if filter.Match(f) {
+			Fatalf(`"%s" is to both watch and ignore`, f)
 		}
 	}
 
 	// Remaining CLi args treated as command
 	cmd := flag.Args()
 	Printf("Cmd %v", cmd)
+
+	// End of CLI args parsing
 
 	app := fsex{
 		cmd:                      cmd,
@@ -135,15 +159,9 @@ func main() {
 			}
 			// list of subdirs is empty for non-directories
 			for _, d := range dirs {
-				var isIgnored bool = false
-				for _, p := range ignorePatterns {
-					// At this stage we know that patterns are ok
-					if isIgnored, _ = filepath.Match(p, filepath.Base(d)); isIgnored {
-						Printf(`"%s" ignored by "%s"`, d, p)
-						break
-					}
-				}
-				if !isIgnored {
+				if filter.Match(d) {
+					Debugf(`"%s" ignored`, d)
+				} else {
 					err = watcher.Add(d)
 					if err != nil {
 						Fatal(err)
@@ -165,15 +183,10 @@ func main() {
 		case event, ok := <-watcher.Events:
 			if ok {
 				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
-					Tracef(`Got %s`, event)
-					isIgnored := false
-					for _, p := range ignorePatterns {
-						if isIgnored, _ = filepath.Match(p, filepath.Base(event.Name)); isIgnored {
-							Debugf(`"%s" ignored by "%s" (%v)`, event.Name, p, isIgnored)
-							break
-						}
-					}
-					if !isIgnored {
+					if filter.Match(event.Name) {
+						Debugf(`"%s" ignored`, event.Name)
+					} else {
+						Tracef(`Got %s`, event)
 						nevents++
 						//Printf("E%06d %v", nevents, event)
 						Debugf("E%06d", nevents)
