@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
@@ -46,8 +47,13 @@ func main() {
 	var ignorePatterns stringListFlag
 	// Files with patterns of pathnames to ignore (one per line)
 	var ignoreFiles stringListFlag
+	// Configuration file
+	var confFile string
+	// Reload app when conf changes
+	flagReloadEnabled := true
 	// TODO: verify uniqueness
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
+	flag.StringVar(&confFile, "F", "", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
 	flag.BoolVar(&flagSuppressDiagnostics, "q", flagSuppressDiagnostics, "Suppress diagnostics")
@@ -75,10 +81,46 @@ func main() {
 		fmt.Printf("%s version %s © %s %s\n", build_vars.AppName, build_vars.Version, years, build_vars.HomePage)
 		return
 	}
-	//Printf("XXX Run once: %v", runOnce)
+	//
+	// TODO: ?? load .env ??
+	//
+	if confFile != "" {
+		if confFileData, err := os.ReadFile(confFile); err != nil {
+			Fatal(`Fail to read "%s": %s`, confFile, err)
+		} else {
+			var targets []string
+			confDataReader := bytes.NewReader(confFileData)
+			if targets, err = LoadConfData(confDataReader); err != nil {
+				Fatal(`Fail to parse "%s": %s`, confFile, err)
+			}
+			if len(targets) == 0 {
+				Print(`"%s" defines no targets`, confFile)
+			} else {
+				fsEntities = append(fsEntities, targets...)
+				Debug(`"%s" defines %d targets`, confFile, len(targets))
+			}
+		}
+	}
+	//Print("XXX Run once: %v", runOnce)
 	// Check that at least one FS entity and at least one word command are passed
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
 		Fatal("Usage: fsex [options] -f<path> <command>")
+	}
+	// Deduplicate target list
+	{
+		targetRegistry := make(map[string]int)
+		origLen := len(fsEntities)
+		for i := 0; i < len(fsEntities); {
+			if _, ok := targetRegistry[fsEntities[i]]; ok {
+				fsEntities = append(fsEntities[:i], fsEntities[i+1:]...)
+			} else {
+				targetRegistry[fsEntities[i]] = 1
+				i += 1
+			}
+		}
+		if len(fsEntities) != origLen {
+			Trace(`Target list deduplicated: %v`, fsEntities)
+		}
 	}
 	//
 	// Build ignore filters
@@ -130,26 +172,39 @@ func main() {
 		flagSuppressStderr:       flagSuppressStderr,
 	}
 
-	// Create FS watcher
+	// Create Watchers
+	var confWatch *fsnotify.Watcher
 	var watcher *fsnotify.Watcher
-	var err error
-	watcher, err = fsnotify.NewWatcher()
-	if err != nil {
-		Fatal(err)
+	{
+		var err error
+		if confFile != "" {
+			if confWatch, err = fsnotify.NewWatcher(); err != nil {
+				Fatal(`Platform error: %s`, err)
+			} else if err = confWatch.Add(confFile); err != nil {
+				Fatal(`Fail to watch "%s": %s`, confFile, err)
+			}
+		}
+		if watcher, err = fsnotify.NewWatcher(); err != nil {
+			Fatal(`Platform error: %s`, err)
+		}
 	}
 	defer func() {
-		err = watcher.Close()
-		if err != nil {
-			Fatal(err)
+		var err error
+		if err = watcher.Close(); err != nil {
+			Fatal(`Fail to stop watch: %v`, err)
+		}
+		if confWatch != nil {
+			if err = confWatch.Close(); err != nil {
+				Fatal(`Fail to stop watch after conf file: %v`, err)
+			}
 		}
 	}()
 
 	// Pass FS entities to watcher
 	for _, f := range fsEntities {
 		// Top level entities already checked vs. ignore patterns
-		err = watcher.Add(f)
-		if err != nil {
-			Fatal(err)
+		if err := watcher.Add(f); err != nil {
+			Fatal(err.Error())
 		}
 		if flagEnabledRecursiveWatch {
 			dirs, err := app.GetSubDirs(f, filter)
@@ -179,6 +234,10 @@ func main() {
 	flagKeepRunning := true
 	for flagKeepRunning {
 		select {
+		case event, ok := <-confWatch.Events:
+			if flagReloadEnabled && ok {
+				Trace(`Conf modified: %v`, event)
+			}
 		case event, ok := <-watcher.Events:
 			if ok {
 				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
