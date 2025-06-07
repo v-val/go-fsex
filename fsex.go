@@ -43,7 +43,7 @@ func (app *fsex) execCommand() {
 		screen.Clear()
 		screen.MoveTopLeft()
 	}
-	Printf("RUN %v\n"+headClose, app.cmd)
+	Print("RUN %v\n"+headClose, app.cmd)
 	err := cmd_.Run()
 	if err != nil {
 		var ee *exec.ExitError
@@ -51,9 +51,9 @@ func (app *fsex) execCommand() {
 			print(bodyEndError)
 		}
 		if errors.As(err, &ee) {
-			Printf("Command returned %d", ee.ExitCode())
+			Print("Command returned %d", ee.ExitCode())
 		} else {
-			Printf("Fail to run command: %s", err)
+			Print("Fail to run command: %s", err)
 		}
 	} else {
 		if loggingInstance.Quietness <= 0 {

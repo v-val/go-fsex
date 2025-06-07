@@ -29,12 +29,12 @@ func (app *fsex) GetSubDirs(path string, filter FileFilter) ([]string, error) {
 						var subdirs []string
 						subdirs, err = app.GetSubDirs(p, filter)
 						if err != nil {
-							Printf("Error: %s", err)
+							Print("Error: %s", err)
 							break
 						}
 						t = append(t, subdirs...)
 					} else {
-						Debugf(`ignore "%s"`, p)
+						Debug(`ignore "%s"`, p)
 					}
 				}
 			}

@@ -78,7 +78,7 @@ func main() {
 	//Printf("XXX Run once: %v", runOnce)
 	// Check that at least one FS entity and at least one word command are passed
 	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
-		Fatalf("Usage: fsex [options] -f<path> <command>")
+		Fatal("Usage: fsex [options] -f<path> <command>")
 	}
 	//
 	// Build ignore filters
@@ -96,12 +96,12 @@ func main() {
 	}
 	for _, f := range ignoreFiles {
 		if err := filter.LoadFile(f); err != nil {
-			Fatalf(`Error parsing ignore file "%s": %s`, f, err)
+			Fatal(`Error parsing ignore file "%s": %s`, f, err)
 		}
-		Debugf(`ignore file "%s" loaded`, f)
+		Debug(`ignore file "%s" loaded`, f)
 	}
 	//
-	Printf("Dir %v", fsEntities)
+	Print("Dir %v", fsEntities)
 	// Check that watch and ignore lists do not intersect
 	// TODO: use not straightforward matching, but:
 	// (A) when pattern contains path separator, it's applied to entire pathname
@@ -113,13 +113,13 @@ func main() {
 	// For now we assume that pattern is to match only name
 	for _, f := range fsEntities {
 		if filter.Match(f) {
-			Fatalf(`"%s" is to both watch and ignore`, f)
+			Fatal(`"%s" is to both watch and ignore`, f)
 		}
 	}
 
 	// Remaining CLi args treated as command
 	cmd := flag.Args()
-	Printf("Cmd %v", cmd)
+	Print("Cmd %v", cmd)
 
 	// End of CLI args parsing
 
@@ -152,19 +152,18 @@ func main() {
 			Fatal(err)
 		}
 		if flagEnabledRecursiveWatch {
-			var dirs []string
-			dirs, err = app.GetSubDirs(f, filter)
+			dirs, err := app.GetSubDirs(f, filter)
 			if err != nil {
-				Fatalf(`Fail to recurse to "%s": %s`, f, err)
+				Fatal(`Fail to recurse to "%s": %s`, f, err)
 			}
 			// list of subdirs is empty for non-directories
 			for _, d := range dirs {
 				if filter.Match(d) {
-					Debugf(`"%s" ignored`, d)
+					Debug(`"%s" ignored`, d)
 				} else {
 					err = watcher.Add(d)
 					if err != nil {
-						Fatal(err)
+						Fatal(err.Error())
 					}
 				}
 			}
@@ -184,14 +183,15 @@ func main() {
 			if ok {
 				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
 					if filter.Match(event.Name) {
-						Debugf(`"%s" ignored`, event.Name)
+						Debug(`"%s" ignored`, event.Name)
 					} else {
-						Tracef(`Got %s`, event)
+						Trace(`Got %s`, event)
 						nevents++
-						//Printf("E%06d %v", nevents, event)
-						Debugf("E%06d", nevents)
+						//Print("E%06d %v", nevents, event)
+						Debug("E%06d", nevents)
 						// TODO: delete for deleted dirs
 						if flagEnabledRecursiveWatch && event.Op&fsnotify.Create != 0 {
+							var err error
 							// Temp files can disappear faster than we check, so ignore errors
 							if ok, err = IsDir(event.Name); err == nil && ok {
 								err = watcher.Add(event.Name)
@@ -209,7 +209,7 @@ func main() {
 			}
 		case err, ok := <-watcher.Errors:
 			if ok {
-				Printf(`Watch error: %v`, err)
+				Print(`Watch error: %v`, err)
 				nerrors++
 				nidle = 0
 			} else {
