@@ -46,7 +46,7 @@ func main() {
 	var ignorePatterns stringListFlag
 	// Files with patterns of pathnames to ignore (one per line)
 	var ignoreFiles stringListFlag
-	// TODO: verify uniqueness
+	//
 	flag.Var(&fsEntities, "f", "File or dir to watch after")
 	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flag.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
