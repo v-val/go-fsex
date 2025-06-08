@@ -135,12 +135,12 @@ func main() {
 	var err error
 	watcher, err = fsnotify.NewWatcher()
 	if err != nil {
-		Fatal(err)
+		Fatal(err.Error())
 	}
 	defer func() {
 		err = watcher.Close()
 		if err != nil {
-			Fatal(err)
+			Fatal(err.Error())
 		}
 	}()
 
@@ -149,7 +149,7 @@ func main() {
 		// Top level entities already checked vs. ignore patterns
 		err = watcher.Add(f)
 		if err != nil {
-			Fatal(err)
+			Fatal(err.Error())
 		}
 		if flagEnabledRecursiveWatch {
 			dirs, err := app.GetSubDirs(f, filter)
