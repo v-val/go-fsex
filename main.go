@@ -47,18 +47,19 @@ func main() {
 	// Files with patterns of pathnames to ignore (one per line)
 	var ignoreFiles stringListFlag
 	//
-	flag.Var(&fsEntities, "f", "File or dir to watch after")
-	flag.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
-	flag.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
-	flag.BoolVar(&flagSuppressDiagnostics, "q", flagSuppressDiagnostics, "Suppress diagnostics")
-	flag.BoolVar(&flagSuppressStdout, "O", flagSuppressStdout, "Hide command STDOUT")
-	flag.BoolVar(&flagSuppressStderr, "E", flagSuppressStderr, "Hide command STDERR")
-	flag.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
-	flag.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
-	flag.Var(&ignorePatterns, "x", "Pattern to ignore.")
-	flag.Var(&ignoreFiles, "X", "Files with patterns to ignore.\n"+
+	flags := flag.NewFlagSet("fsex", flag.ExitOnError)
+	flags.Var(&fsEntities, "f", "File or dir to watch after")
+	flags.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
+	flags.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
+	flags.BoolVar(&flagSuppressDiagnostics, "q", flagSuppressDiagnostics, "Suppress diagnostics")
+	flags.BoolVar(&flagSuppressStdout, "O", flagSuppressStdout, "Hide command STDOUT")
+	flags.BoolVar(&flagSuppressStderr, "E", flagSuppressStderr, "Hide command STDERR")
+	flags.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
+	flags.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
+	flags.Var(&ignorePatterns, "x", "Pattern to ignore.")
+	flags.Var(&ignoreFiles, "X", "Files with patterns to ignore.\n"+
 		`Please note: ".zzup.ignore" and ".rsync.ignore" auto-included`)
-	flag.Parse()
+	flags.Parse(os.Args[1:])
 	if flagSuppressDiagnostics {
 		SetQuietness(incrementableInt(1))
 	}
@@ -77,7 +78,7 @@ func main() {
 	}
 	//Printf("XXX Run once: %v", runOnce)
 	// Check that at least one FS entity and at least one word command are passed
-	if len(fsEntities) < 1 || len(flag.Args()) < 1 {
+	if len(fsEntities) < 1 || len(flags.Args()) < 1 {
 		Fatal("Usage: fsex [options] -f<path> <command>")
 	}
 	//
@@ -118,7 +119,7 @@ func main() {
 	}
 
 	// Remaining CLi args treated as command
-	cmd := flag.Args()
+	cmd := flags.Args()
 	Print("Cmd %v", cmd)
 
 	// End of CLI args parsing
