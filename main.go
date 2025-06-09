@@ -50,7 +50,7 @@ func main() {
 	// Configuration file
 	var confFile string
 	// Reload app when conf changes
-	flagReloadEnabled := true
+	var flagReloadEnabled bool = true
 	//
 	flags := flag.NewFlagSet("fsex", flag.ExitOnError)
 	flags.Var(&fsEntities, "f", "File or dir to watch after")
@@ -61,6 +61,7 @@ func main() {
 	flags.BoolVar(&flagSuppressStderr, "E", flagSuppressStderr, "Hide command STDERR")
 	flags.BoolVar(&flagPrintVersionAndExit, "version", flagPrintVersionAndExit, "Print version and exit")
 	flags.BoolVar(&flagPrintAboutAndExit, "about", flagPrintAboutAndExit, "Print about info and exit")
+	flags.BoolVar(&flagReloadEnabled, "R", flagReloadEnabled, "Disable app reload on conf file change")
 	flags.Var(&ignorePatterns, "x", "Pattern to ignore.")
 	flags.Var(&ignoreFiles, "X", "Files with patterns to ignore.\n"+
 		`Please note: ".zzup.ignore" and ".rsync.ignore" auto-included`)
@@ -172,18 +173,24 @@ func main() {
 		flagSuppressStderr:       flagSuppressStderr,
 	}
 
-	// Create Watchers
+	// Watcher for the conf file
+	// Always created, initialized only if there's a confFile
+	// and reload on conf change is enabled.
 	var confWatch *fsnotify.Watcher
-	var watcher *fsnotify.Watcher
 	{
 		var err error
-		if confFile != "" {
-			if confWatch, err = fsnotify.NewWatcher(); err != nil {
-				Fatal(`Platform error: %s`, err)
-			} else if err = confWatch.Add(confFile); err != nil {
+		if confWatch, err = fsnotify.NewWatcher(); err != nil {
+			Fatal(`Platform error: %s`, err)
+		} else if confFile != "" && flagReloadEnabled {
+			if err = confWatch.Add(confFile); err != nil {
 				Fatal(`Fail to watch "%s": %s`, confFile, err)
 			}
 		}
+	}
+	// Watcher for target files
+	var watcher *fsnotify.Watcher
+	{
+		var err error
 		if watcher, err = fsnotify.NewWatcher(); err != nil {
 			Fatal(`Platform error: %s`, err)
 		}
