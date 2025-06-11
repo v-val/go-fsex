@@ -9,18 +9,25 @@ import (
 	"github.com/v-val/go-fsex/build-vars"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
+
+const AppId = "FsEx"
 
 const FirstPublicationYear = "2022"
 
 // Init - get config parameters from env
 func init() {
-	//const ENV_VERBOSITY = "FSEX_VERBOSITY"
-	//s := os.Getenv(ENV_VERBOSITY)
-	//if s != "" {
-	//
-	//}
+	const EnvVerbosity = "FSEX_VERBOSITY"
+	if s, ok := os.LookupEnv(EnvVerbosity); ok {
+		q, err := strconv.Atoi(s)
+		if err != nil {
+			panic(fmt.Errorf(`environment %s: signed int expected, got "%s"`, EnvVerbosity, s))
+		}
+		SetQuietness(incrementableInt(q))
+	}
 }
 
 // Main
@@ -52,8 +59,9 @@ func main() {
 	// Reload app when conf changes
 	var flagReloadEnabled bool = true
 	//
-	flags := flag.NewFlagSet("fsex", flag.ExitOnError)
+	flags := flag.NewFlagSet(strings.ToLower(AppId), flag.ExitOnError)
 	flags.Var(&fsEntities, "f", "File or dir to watch after")
+	flags.StringVar(&confFile, "F", "", "File or dir to watch after")
 	flags.BoolVar(&needClearScreenOnChanges, "c", needClearScreenOnChanges, "Clear screen before running command")
 	flags.BoolVar(&runOnce, "1", runOnce, "Exit after executing command once")
 	flags.BoolVar(&flagSuppressDiagnostics, "q", flagSuppressDiagnostics, "Suppress diagnostics")
@@ -82,23 +90,27 @@ func main() {
 		fmt.Printf("%s version %s © %s %s\n", build_vars.AppName, build_vars.Version, years, build_vars.HomePage)
 		return
 	}
+	// targets from conf file can be updated during reload,
+	// while targets set in CLI should stay the same
+	targetsFromCLI := fsEntities[0:]
 	//
 	// TODO: ?? load .env ??
 	//
+ConfReload:
 	if confFile != "" {
 		if confFileData, err := os.ReadFile(confFile); err != nil {
 			Fatal(`Fail to read "%s": %s`, confFile, err)
 		} else {
-			var targets []string
+			var targetsFromFile []string
 			confDataReader := bytes.NewReader(confFileData)
-			if targets, err = LoadConfData(confDataReader); err != nil {
+			if targetsFromFile, err = LoadConfData(confDataReader); err != nil {
 				Fatal(`Fail to parse "%s": %s`, confFile, err)
 			}
-			if len(targets) == 0 {
+			if len(targetsFromFile) == 0 {
 				Print(`"%s" defines no targets`, confFile)
 			} else {
-				fsEntities = append(fsEntities, targets...)
-				Debug(`"%s" defines %d targets`, confFile, len(targets))
+				fsEntities = append(targetsFromCLI, targetsFromFile...)
+				Debug(`"%s" defines %d targets`, confFile, len(targetsFromFile))
 			}
 		}
 	}
@@ -238,12 +250,16 @@ func main() {
 	nerrors := 0
 	// Number of idle loops since last detected event
 	nidle := 0
+	// confUpdatesCount
+	confUpdateCount := 0
 	flagKeepRunning := true
 	for flagKeepRunning {
 		select {
 		case event, ok := <-confWatch.Events:
 			if flagReloadEnabled && ok {
 				Trace(`Conf modified: %v`, event)
+				confUpdateCount++
+				nidle = 0
 			}
 		case event, ok := <-watcher.Events:
 			if ok {
@@ -282,7 +298,6 @@ func main() {
 				Print("Errors chan closed, finishing..")
 				flagKeepRunning = false
 			}
-
 		default:
 			// Can be within short pause between two events / errors
 			// Do number of short sleeps until total sleep time exceeds timeout
@@ -311,12 +326,19 @@ func main() {
 				// = 500ms idle
 				time.Sleep(50 * time.Millisecond)
 			} else {
-				if nidle == 45 && (nevents > 0 || nerrors > 0) {
-					app.execCommand()
-					nevents = 0
-					nerrors = 0
-					if runOnce {
-						flagKeepRunning = false
+				if nidle == 45 {
+					if nevents > 0 || nerrors > 0 {
+						// TODO: pass info about changes
+						app.execCommand()
+						nevents = 0
+						nerrors = 0
+						if runOnce {
+							flagKeepRunning = false
+						}
+					}
+					if confUpdateCount > 0 {
+						confUpdateCount = 0
+						goto ConfReload
 					}
 				} else {
 					time.Sleep(100 * time.Millisecond)

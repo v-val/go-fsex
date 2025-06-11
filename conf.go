@@ -9,6 +9,10 @@ import (
 )
 
 // Line-based conf format looks most appropriate for the moment.
+
+// DefaultConfFileName as it reads
+var DefaultConfFileName = strings.ToLower(AppId + ".conf")
+
 // Blank character in line opening and ending are ignored
 // Hash `#` and subsequent characters through the end of the line are ignored.
 // Empty lines ignored.
